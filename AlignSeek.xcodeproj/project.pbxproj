@@ -185,7 +185,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				INFOPLIST_FILE = "AlignSeek/Info.plist";
 			};
 			name = Debug;
 		};
@@ -242,7 +241,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
-				INFOPLIST_FILE = "AlignSeek/Info.plist";
 			};
 			name = Release;
 		};
