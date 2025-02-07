@@ -87,7 +87,7 @@ struct SidebarView: View {
             HStack {
                 Image(systemName: "person.circle.fill")
                     .font(.title)
-                Text("Sherwin Zhou (Sherwin)")
+                Text("用户信息")
                     .font(.headline)
                 Spacer()
                 Image(systemName: "ellipsis")

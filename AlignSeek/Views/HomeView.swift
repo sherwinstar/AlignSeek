@@ -195,6 +195,9 @@ struct HomeView: View {
         messages.append(userMessage)
         inputMessage = ""
         
+        // 发送消息后取消键盘焦点
+        isFocused = false
+        
         // 模拟AI响应
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             let aiMessage = ChatMessage(content: "这是一个模拟的回复。", isUser: false, timestamp: Date())
