@@ -22,7 +22,7 @@ struct SidebarView: View {
                 HStack {
                     Image(systemName: "bubble.left.fill")
                         .foregroundColor(.blue)
-                    Text("AlignSeek")
+                    Text("Test")
                         .font(.headline)
                     Spacer()
                 }
@@ -35,7 +35,7 @@ struct SidebarView: View {
                 HStack {
                     Image(systemName: "square.grid.2x2")
                         .foregroundColor(.gray)
-                    Text("探索 AlignSeek")
+                    Text("探索 Test")
                         .font(.headline)
                     Spacer()
                 }
