@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var isReasoningSelected = false
     @State private var showingPlusMenu = false
     @State private var plusButtonFrame: CGRect = .zero // 存储加号按钮的位置
+    @State private var isRecording = false
     
     var body: some View {
         ZStack {
@@ -58,38 +59,45 @@ struct HomeView: View {
                 
                 // 底部区域
                 VStack(spacing: 0) {
-                    // 输入框
-                    ZStack(alignment: .leading) {
-                        AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
-                            .frame(height: textViewHeight)
-                        
-                        if inputMessage.isEmpty {
-                            Text("消息")
-                                .foregroundColor(Color(UIColor.placeholderText))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                                .allowsHitTesting(false)
+                    // 输入框和录音界面
+                    if isRecording {
+                        RecordingView(isRecording: $isRecording)
+                            .transition(.opacity)
+                    } else {
+                        // 输入框
+                        ZStack(alignment: .leading) {
+                            AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
+                                .frame(height: textViewHeight)
+                            
+                            if inputMessage.isEmpty {
+                                Text("消息")
+                                    .foregroundColor(Color(UIColor.placeholderText))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                    .allowsHitTesting(false)
+                            }
                         }
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(.white)
+                                .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 0)
+                        )
+                        .clipShape(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 20,
+                                bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 20
+                            )
+                        )
+                        .overlay(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 20,
+                                bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 20
+                            )
+                            .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
+                        )
+                        .focused($isFocused)
+                        .transition(.opacity)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(.white)
-                            .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 0)
-                    )
-                    .clipShape(
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 30,
-                            bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 30
-                        )
-                    )
-                    .overlay(
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 30,
-                            bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 30
-                        )
-                        .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
-                    )
-                    .focused($isFocused)
                     
                     // 底部工具栏
                     HStack {
@@ -150,7 +158,9 @@ struct HomeView: View {
                         
                         // 右侧按钮组
                         HStack(spacing: 16) {
-                            Button(action: {}) {
+                            Button(action: {
+                                isRecording = true
+                            }) {
                                 Image(systemName: "mic")
                                     .font(.system(size: 24))
                                     .foregroundColor(.black)
