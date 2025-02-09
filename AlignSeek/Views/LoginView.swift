@@ -22,18 +22,15 @@ struct LoginView: View {
                     .padding(.bottom, 40)
                 
                 // 邮箱输入框
-                TextField("", text: $email)
-                    .placeholder(when: email.isEmpty) {
-                        Text("baby@gmail.com").foregroundColor(.gray)
-                    }
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    )
-                    .padding(.horizontal)
+                TextField("Your Email", text: $email)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.emailAddress)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+                .padding(.horizontal)
                 
                 // 密码输入框
                 SecureField("Password", text: $password)

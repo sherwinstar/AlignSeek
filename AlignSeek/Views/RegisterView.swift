@@ -14,7 +14,7 @@ struct RegisterView: View {
                 .padding(.top, 60)
             
             // 邮箱输入框
-            TextField("Email", text: $email)
+            TextField("Your Email", text: $email)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.emailAddress)
                 .padding()
