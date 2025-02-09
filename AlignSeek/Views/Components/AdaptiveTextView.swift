@@ -14,9 +14,13 @@ struct AdaptiveTextView: UIViewRepresentable {
         textView.delegate = context.coordinator
         textView.font = .systemFont(ofSize: 16)
         textView.backgroundColor = .white
-        textView.isScrollEnabled = false
+        textView.isScrollEnabled = true
         textView.text = text
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
+        textView.textContainer.lineBreakMode = .byWordWrapping
+        textView.textContainer.lineFragmentPadding = 0
+        textView.textContainer.lineBreakMode = .byWordWrapping
+        textView.textContainer.maximumNumberOfLines = 0
         return textView
     }
     

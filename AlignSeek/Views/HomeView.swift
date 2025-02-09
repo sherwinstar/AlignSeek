@@ -68,22 +68,27 @@ struct HomeView: View {
                         } else {
                             // 输入框
                             ZStack(alignment: .leading) {
-                                AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
-                                    .frame(height: textViewHeight)
+                                GeometryReader { geometry in
+                                    AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
+                                        .frame(width: geometry.size.width)  // 减去左右padding
+                                        .frame(height: textViewHeight)
+                                }
+                                .frame(height: textViewHeight)
                                 
                                 if inputMessage.isEmpty {
                                     Text("消息")
                                         .foregroundColor(Color(UIColor.placeholderText))
-                                        .padding(.horizontal, 16)
+                                        .padding(.horizontal, 0)
                                         .padding(.vertical, 12)
                                         .allowsHitTesting(false)
                                 }
                             }
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(.white)
-                                    .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 0)
-                            )
+                            .padding(.horizontal, 12)  // 添加水平padding
+//                            .background(
+//                                RoundedRectangle(cornerRadius: 20)
+//                                    .fill(.white)
+//                                    .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 0)
+//                            )
                             .clipShape(
                                 UnevenRoundedRectangle(
                                     topLeadingRadius: 20,
@@ -91,11 +96,27 @@ struct HomeView: View {
                                 )
                             )
                             .overlay(
-                                UnevenRoundedRectangle(
-                                    topLeadingRadius: 20,
-                                    bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 20
-                                )
-                                .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
+                                GeometryReader { geometry in
+                                    Path { path in
+                                        let w = geometry.size.width
+                                        let radius: CGFloat = 20
+                                        
+                                        // 只绘制上半部分
+                                        path.move(to: CGPoint(x: 0, y: radius))  // 从左边开始
+                                        path.addArc(center: CGPoint(x: radius, y: radius),
+                                                   radius: radius,
+                                                   startAngle: .degrees(180),
+                                                   endAngle: .degrees(270),
+                                                   clockwise: false)  // 左上角圆弧
+                                        path.addLine(to: CGPoint(x: w - radius, y: 0))  // 上边线
+                                        path.addArc(center: CGPoint(x: w - radius, y: radius),
+                                                   radius: radius,
+                                                   startAngle: .degrees(270),
+                                                   endAngle: .degrees(0),
+                                                   clockwise: false)  // 右上角圆弧
+                                    }
+                                    .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
+                                }
                             )
                             .focused($isFocused)
                             .transition(.opacity)
