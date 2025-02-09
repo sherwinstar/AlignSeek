@@ -5,42 +5,89 @@ struct RegisterView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var isPasswordVisible = false  // 密码可见性
+    @State private var isConfirmPasswordVisible = false  // 确认密码可见性
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     
     var body: some View {
         VStack(spacing: 20) {
             Text("Create Account")
-                .font(.title)
+                .font(.title2)
+                .bold()
                 .padding(.top, 60)
             
             // 邮箱输入框
             TextField("Your Email", text: $email)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.emailAddress)
-                .padding()
+                .foregroundColor(.black)
+                .padding(.horizontal)
+                .frame(height: 56)  // 固定高度
                 .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(.systemGray5), lineWidth: 1)
                 )
                 .padding(.horizontal)
             
             // 密码输入框
-            SecureField("Password", text: $password)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-                .padding(.horizontal)
+            HStack {
+                if isPasswordVisible {
+                    TextField("Password", text: $password)
+                        .foregroundColor(.black)
+                        .padding(.leading)
+                } else {
+                    SecureField("Password", text: $password)
+                        .foregroundColor(.black)
+                        .padding(.leading)
+                }
+                
+                Button(action: {
+                    isPasswordVisible.toggle()
+                }) {
+                    Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                        .foregroundColor(Color(.systemGray3))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
+            }
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(.systemGray5), lineWidth: 1)
+            )
+            .padding(.horizontal)
             
             // 确认密码输入框
-            SecureField("Confirm Password", text: $confirmPassword)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-                .padding(.horizontal)
+            HStack {
+                if isConfirmPasswordVisible {
+                    TextField("Confirm Password", text: $confirmPassword)
+                        .foregroundColor(.black)
+                        .padding(.leading)
+                } else {
+                    SecureField("Confirm Password", text: $confirmPassword)
+                        .foregroundColor(.black)
+                        .padding(.leading)
+                }
+                
+                Button(action: {
+                    isConfirmPasswordVisible.toggle()
+                }) {
+                    Image(systemName: isConfirmPasswordVisible ? "eye.slash" : "eye")
+                        .foregroundColor(Color(.systemGray3))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
+            }
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(.systemGray5), lineWidth: 1)
+            )
+            .padding(.horizontal)
             
             // 注册按钮
             Button(action: {

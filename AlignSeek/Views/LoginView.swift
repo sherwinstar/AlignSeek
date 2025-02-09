@@ -4,42 +4,62 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showingRegister = false
+    @State private var isPasswordVisible = false
     @Binding var isLoggedIn: Bool
     
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
                 // Logo
-                Image("HKSense")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 200, height: 100)
-                    .padding(.bottom, 20)
                 
                 Text("Log in to unlock seamless\nAI conversations.")
                     .multilineTextAlignment(.center)
                     .font(.title2)
+                    .bold()
                     .padding(.bottom, 40)
                 
                 // 邮箱输入框
                 TextField("Your Email", text: $email)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.emailAddress)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-                .padding(.horizontal)
-                
-                // 密码输入框
-                SecureField("Password", text: $password)
-                    .padding()
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+                    .foregroundColor(.black)
+                    .padding(.horizontal)
+                    .frame(height: 56)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color(.systemGray5), lineWidth: 1)
                     )
                     .padding(.horizontal)
+                
+                // 密码输入框
+                HStack {
+                    if isPasswordVisible {
+                        TextField("Password", text: $password)
+                            .foregroundColor(.black)
+                            .padding(.leading)
+                    } else {
+                        SecureField("Password", text: $password)
+                            .foregroundColor(.black)
+                            .padding(.leading)
+                    }
+                    
+                    Button(action: {
+                        isPasswordVisible.toggle()
+                    }) {
+                        Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                            .foregroundColor(Color(.systemGray3))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 8)
+                }
+                .frame(height: 56)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(.systemGray5), lineWidth: 1)
+                )
+                .padding(.horizontal)
                 
                 // 登录按钮
                 Button(action: {
