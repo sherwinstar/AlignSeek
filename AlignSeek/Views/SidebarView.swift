@@ -3,6 +3,8 @@ import SwiftUI
 struct SidebarView: View {
     @Binding var isPresented: Bool
     @State private var searchText = ""
+    @State private var showingSettings = false
+    @AppStorage("userEmail") private var userEmail = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -87,15 +89,22 @@ struct SidebarView: View {
             HStack {
                 Image(systemName: "person.circle.fill")
                     .font(.title)
-                Text("用户信息")
+                Text(userEmail)
                     .font(.headline)
                 Spacer()
-                Image(systemName: "ellipsis")
+                Button(action: {
+                    showingSettings = true
+                }) {
+                    Image(systemName: "ellipsis")
+                }
             }
             .padding()
             .background(Color(UIColor.secondarySystemBackground))
         }
         .frame(width: UIScreen.main.bounds.width * 0.75)
         .background(Color(UIColor.systemBackground))
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+        }
     }
 } 

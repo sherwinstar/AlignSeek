@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var plusButtonFrame: CGRect = .zero // 存储加号按钮的位置
     @State private var isRecording = false
     @State private var isShowingRecordingPage = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     
     var body: some View {
         NavigationView {
@@ -276,5 +277,10 @@ struct HomeView: View {
             let aiMessage = ChatMessage(content: "这是一个模拟的回复。", isUser: false, timestamp: Date())
             messages.append(aiMessage)
         }
+    }
+    
+    private func logout() {
+        isLoggedIn = false  // 这会清除登录状态
+        // 可以在这里清除其他需要的数据
     }
 } 

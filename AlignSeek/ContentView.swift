@@ -6,8 +6,14 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
+    
     var body: some View {
-        HomeView()
+        if isLoggedIn {
+            HomeView()
+        } else {
+            LoginView(isLoggedIn: $isLoggedIn)
+        }
     }
 }
 
