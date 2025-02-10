@@ -1,12 +1,5 @@
 import SwiftUI
 
-struct ChatMessage: Identifiable {
-    let id = UUID()
-    let content: String
-    let isUser: Bool
-    let timestamp: Date
-}
-
 struct MessageBubble: View {
     let message: ChatMessage
     
@@ -14,7 +7,7 @@ struct MessageBubble: View {
         HStack {
             if message.isUser { Spacer() }
             
-            Text(message.content)
+            Text(message.content!)
                 .padding(12)
                 .background(message.isUser ? Color.blue : Color(UIColor.systemGray5))
                 .foregroundColor(message.isUser ? .white : .primary)

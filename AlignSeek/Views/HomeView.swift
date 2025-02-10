@@ -15,6 +15,10 @@ struct HomeView: View {
     @State private var isRecording = false
     @State private var isShowingRecordingPage = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @Environment(\.managedObjectContext) private var viewContext
+    
+    // 添加当前会话状态
+    @State private var currentSession: ChatSession?
     
     var body: some View {
         NavigationView {
@@ -42,7 +46,9 @@ struct HomeView: View {
                         
                         Spacer()
                         
-                        Button(action: {}) {
+                        Button(action: {
+                            createNewChat()
+                        }) {
                             Image(systemName: "square.and.pencil")
                                 .font(.title2)
                                 .foregroundColor(.primary)
@@ -258,6 +264,9 @@ struct HomeView: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showingSidebar)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showingPlusMenu)
             .navigationBarHidden(true)
+            .onAppear {
+                loadLatestSession()
+            }
         }
     }
     
@@ -265,22 +274,72 @@ struct HomeView: View {
         let trimmedMessage = inputMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty else { return }
         
-        let userMessage = ChatMessage(content: trimmedMessage, isUser: true, timestamp: Date())
+        // 如果没有当前会话，创建一个新会话
+        if currentSession == nil {
+            currentSession = CoreDataManager.shared.createChatSession(
+                id: UUID().uuidString,  // 使用UUID作为会话ID
+                email: UserDefaults.standard.string(forKey: "userEmail") ?? "",
+                title: "New Chat"
+            )
+        }
+        
+        guard let session = currentSession else { return }
+        
+        // 创建用户消息
+        let userMessage = CoreDataManager.shared.createChatMessage(
+            content: trimmedMessage,
+            isUser: true,
+            session: session
+        )
         messages.append(userMessage)
         inputMessage = ""
-        
-        // 发送消息后取消键盘焦点
         isFocused = false
         
-        // 模拟AI响应
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            let aiMessage = ChatMessage(content: "这是一个模拟的回复。", isUser: false, timestamp: Date())
-            messages.append(aiMessage)
+        // 调用 API 获取 AI 响应
+        APIService.shared.sendMessage(trimmedMessage) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    let aiMessage = CoreDataManager.shared.createChatMessage(
+                        content: response,
+                        isUser: false,
+                        session: session
+                    )
+                    messages.append(aiMessage)
+                    
+                case .failure(let error):
+                    print("API Error: \(error.localizedDescription)")
+                    // TODO: 显示错误提示
+                }
+            }
         }
+    }
+    
+    // 添加创建新会话的方法
+    private func createNewChat() {
+        // 清空当前会话和消息
+        currentSession = nil
+        messages.removeAll()
+        
+        // 创建新会话
+        currentSession = CoreDataManager.shared.createChatSession(
+            id: UUID().uuidString,
+            email: UserDefaults.standard.string(forKey: "userEmail") ?? "",
+            title: "New Chat"
+        )
     }
     
     private func logout() {
         isLoggedIn = false  // 这会清除登录状态
         // 可以在这里清除其他需要的数据
+    }
+    
+    private func loadLatestSession() {
+        let email = UserDefaults.standard.string(forKey: "userEmail") ?? ""
+        let sessions = CoreDataManager.shared.fetchChatSessions(for: email)
+        if let latestSession = sessions.first {
+            currentSession = latestSession
+            messages = CoreDataManager.shared.fetchChatMessages(for: latestSession.id!)
+        }
     }
 } 
