@@ -2,9 +2,18 @@ import SwiftUI
 
 struct SidebarView: View {
     @Binding var isPresented: Bool
+    @Binding var currentSession: ChatSession?
+    var onSessionSelected: ((ChatSession) -> Void)?
     @State private var searchText = ""
-    @State private var showingSettings = false
+    @State private var showingLogoutAlert = false
     @AppStorage("userEmail") private var userEmail = ""
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
+    
+    // 获取当前用户的所有会话
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \ChatSession.time, ascending: false)],
+        predicate: NSPredicate(format: "email == %@", UserDefaults.standard.string(forKey: "userEmail") ?? "")
+    ) private var sessions: FetchedResults<ChatSession>
     
     var body: some View {
         VStack(spacing: 0) {
@@ -19,92 +28,62 @@ struct SidebarView: View {
             .cornerRadius(8)
             .padding()
             
-            // AlignSeek 选项
-            Button(action: {}) {
-                HStack {
-                    Image(systemName: "bubble.left.fill")
-                        .foregroundColor(.blue)
-                    Text("Test")
-                        .font(.headline)
-                    Spacer()
-                }
-                .padding()
-                .background(Color(UIColor.secondarySystemBackground))
-            }
-            
-            // 探索 AlignSeek 选项
-            Button(action: {}) {
-                HStack {
-                    Image(systemName: "square.grid.2x2")
-                        .foregroundColor(.gray)
-                    Text("探索 Test")
-                        .font(.headline)
-                    Spacer()
-                }
-                .padding()
-            }
-            
-            // 聊天历史分组
-            VStack(alignment: .leading, spacing: 0) {
-                Text("今天")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                
-                Button(action: {}) {
-                    Text("Ddd Clarification")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                }
-                
-                Text("昨天")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                
-                Button(action: {}) {
-                    Text("测试订阅账户设置")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                }
-                
-                Text("上周")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                
-                Button(action: {}) {
-                    Text("开发Python后端帮助")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
+            // 会话列表
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(sessions) { session in
+                        Button(action: {
+                            currentSession = session
+                            onSessionSelected?(session)
+                            isPresented = false
+                        }) {
+                            HStack {
+                                Text(session.title ?? "New Chat")
+                                    .lineLimit(1)
+                                Spacer()
+                                Image("icon_right_arrow")  // 使用自定义图片
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                            }
+                            .padding()
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
             
             Spacer()
             
-            // 用户信息
-            HStack {
-                Image(systemName: "person.circle.fill")
-                    .font(.title)
-                Text(userEmail)
-                    .font(.headline)
-                Spacer()
-                Button(action: {
-                    showingSettings = true
-                }) {
-                    Image(systemName: "ellipsis")
+            // 底部登出按钮
+            Button(action: {
+                showingLogoutAlert = true
+            }) {
+                HStack {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                    Text("退出登录")
+                        .foregroundColor(.red)
                 }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color(UIColor.secondarySystemBackground))
             }
-            .padding()
-            .background(Color(UIColor.secondarySystemBackground))
         }
         .frame(width: UIScreen.main.bounds.width * 0.75)
         .background(Color(UIColor.systemBackground))
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
+        .alert("确认退出登录", isPresented: $showingLogoutAlert) {
+            Button("取消", role: .cancel) { }
+            Button("退出登录", role: .destructive) {
+                logout()
+            }
+        } message: {
+            Text("确定要退出登录吗？")
         }
+    }
+    
+    private func logout() {
+        isLoggedIn = false
+        isPresented = false
     }
 } 

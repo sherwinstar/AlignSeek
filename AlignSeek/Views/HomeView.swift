@@ -226,7 +226,14 @@ struct HomeView: View {
                         }
                     
                     HStack {
-                        SidebarView(isPresented: $showingSidebar)
+                        SidebarView(
+                            isPresented: $showingSidebar,
+                            currentSession: $currentSession,
+                            onSessionSelected: { session in
+                                currentSession = session
+                                messages = CoreDataManager.shared.fetchChatMessages(for: session.id!)
+                            }
+                        )
                         Spacer()
                     }
                     .transition(.move(edge: .leading))
@@ -279,7 +286,7 @@ struct HomeView: View {
             currentSession = CoreDataManager.shared.createChatSession(
                 id: UUID().uuidString,  // 使用UUID作为会话ID
                 email: UserDefaults.standard.string(forKey: "userEmail") ?? "",
-                title: "New Chat"
+                title: trimmedMessage
             )
         }
         

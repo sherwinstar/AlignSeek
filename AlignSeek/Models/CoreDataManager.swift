@@ -114,4 +114,9 @@ class CoreDataManager {
             }
         }
     }
+    
+    func updateChatMessage(_ message: ChatMessage, content: String) {
+        message.content = content
+        saveContext()
+    }
 } 
