@@ -5,19 +5,24 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showingRegister = false
     @State private var isPasswordVisible = false
+    @State private var showingError = false
+    @State private var errorMessage = ""
     @Binding var isLoggedIn: Bool
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
+            VStack(spacing: 0) {
                 // Logo
-                
-                Text("Log in to unlock seamless\nAI conversations.")
+                Image("icon_hksense")
+                    .frame(width:121, height: 24)
+                Text("Log in to unlock seamless AI conversations.")
                     .multilineTextAlignment(.center)
                     .font(.title2)
                     .bold()
-                    .padding(.bottom, 40)
-                
+                    .padding(.bottom, 24)
+                    .padding(.top, 16)
+                Divider().background(Color(hex: 0x1C1C1C, alpha: 0.1))
+                    .padding(.horizontal)
                 // 邮箱输入框
                 TextField("Your Email", text: $email)
                     .textInputAutocapitalization(.never)
@@ -27,9 +32,11 @@ struct LoginView: View {
                     .frame(height: 56)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(.systemGray5), lineWidth: 1)
+                            .stroke(Color(hex: 0x86909C), lineWidth: 1)
                     )
                     .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 16)
                 
                 // 密码输入框
                 HStack {
@@ -57,7 +64,7 @@ struct LoginView: View {
                 .frame(height: 56)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(.systemGray5), lineWidth: 1)
+                        .stroke(Color(hex: 0x86909C), lineWidth: 1)
                 )
                 .padding(.horizontal)
                 
@@ -75,6 +82,7 @@ struct LoginView: View {
                 }
                 .disabled(!isValidInput)
                 .padding(.horizontal)
+                .padding(.top, 18)
                 
                 // 注册按钮
                 NavigationLink(destination: RegisterView(), isActive: $showingRegister) {
@@ -86,6 +94,11 @@ struct LoginView: View {
                 Spacer()
             }
             .padding(.top, 60)
+            .alert("登录失败", isPresented: $showingError) {
+                Button("确定", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
         }
     }
     
@@ -100,10 +113,32 @@ struct LoginView: View {
     }
     
     private func login() {
-        if isValidInput {
-            // 保存用户邮箱
-            UserDefaults.standard.set(email, forKey: "userEmail")
-            isLoggedIn = true
+        guard isValidInput else { return }
+        
+        // 开始异步登录
+        Task {
+            do {
+                let response = try await AuthService.shared.login(email: email, password: password)
+                
+                // 在主线程更新 UI
+                await MainActor.run {
+                    if response.errorId == 0 {
+                        // 登录成功
+                        UserDefaults.standard.set(email, forKey: "userEmail")
+                        isLoggedIn = true
+                    } else {
+                        // 登录失败，显示错误信息
+                        errorMessage = "用户名或密码错误，请重试"
+                        showingError = true
+                    }
+                }
+            } catch {
+                // 处理网络错误等
+                await MainActor.run {
+                    errorMessage = "登录失败，请稍后重试"
+                    showingError = true
+                }
+            }
         }
     }
 }
