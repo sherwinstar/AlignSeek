@@ -327,13 +327,6 @@ struct HomeView: View {
         // 清空当前会话和消息
         currentSession = nil
         messages.removeAll()
-        
-        // 创建新会话
-        currentSession = CoreDataManager.shared.createChatSession(
-            id: UUID().uuidString,
-            email: UserDefaults.standard.string(forKey: "userEmail") ?? "",
-            title: "New Chat"
-        )
     }
     
     private func logout() {

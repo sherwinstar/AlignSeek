@@ -8,7 +8,6 @@
         <relationship name="session" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChatSession"/>
     </entity>
     <entity name="ChatSession" representedClassName="ChatSession" syncable="YES" codeGenerationType="class">
-        <attribute name="content" attributeType="String"/>
         <attribute name="email" attributeType="String"/>
         <attribute name="id" attributeType="String"/>
         <attribute name="time" attributeType="Date" usesScalarValueType="NO"/>
