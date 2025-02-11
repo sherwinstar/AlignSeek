@@ -116,11 +116,11 @@ struct HomeView: View {
                                             .frame(height: 70)
                                         }
                                         
-                                        GeometryReader { geometry in
-                                            AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
-                                                .frame(width: geometry.size.width)
-                                                .frame(height: textViewHeight)
-                                        }
+                                        AdaptiveTextViewWithPlaceholder(
+                                            text: $inputMessage,
+                                            height: $textViewHeight,
+                                            placeholder: "消息"
+                                        )
                                         .frame(height: textViewHeight)
                                     }
                                 }

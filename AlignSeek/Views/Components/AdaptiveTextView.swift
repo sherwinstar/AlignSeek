@@ -3,7 +3,6 @@ import SwiftUI
 struct AdaptiveTextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var height: CGFloat
-    var placeholder: String
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -13,10 +12,10 @@ struct AdaptiveTextView: UIViewRepresentable {
         let textView = UITextView()
         textView.delegate = context.coordinator
         textView.font = .systemFont(ofSize: 16)
-        textView.backgroundColor = .white
+        textView.backgroundColor = .clear
         textView.isScrollEnabled = true
-        textView.text = text.isEmpty ? placeholder : text
-        textView.textColor = text.isEmpty ? .placeholderText : .black
+        textView.text = text
+        textView.textColor = .black
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         textView.textContainer.lineBreakMode = .byWordWrapping
         textView.textContainer.lineFragmentPadding = 0
@@ -28,7 +27,6 @@ struct AdaptiveTextView: UIViewRepresentable {
         // 确保文本更新
         if uiView.text != text {
             uiView.text = text
-            uiView.textColor = text.isEmpty ? .placeholderText : .black
         }
         
         if uiView.window != nil, !context.coordinator.didSetupInitialHeight {
@@ -49,24 +47,29 @@ struct AdaptiveTextView: UIViewRepresentable {
         
         func textViewDidChange(_ textView: UITextView) {
             parent.text = textView.text
-            let size = textView.sizeThatFits(CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude))
-            DispatchQueue.main.async {
-                self.parent.height = min(max(44, size.height), 120)
-            }
-        }
-        
-        func textViewDidBeginEditing(_ textView: UITextView) {
-            if textView.textColor == .placeholderText {
-                textView.text = ""
-                textView.textColor = .black
-            }
-        }
-        
-        func textViewDidEndEditing(_ textView: UITextView) {
-            if textView.text.isEmpty {
-                textView.text = parent.placeholder
-                textView.textColor = .placeholderText
-            }
+            parent.height = max(44, textView.sizeThatFits(CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude)).height)
         }
     }
-} 
+}
+
+// 创建一个包装视图来处理 placeholder
+struct AdaptiveTextViewWithPlaceholder: View {
+    @Binding var text: String
+    @Binding var height: CGFloat
+    var placeholder: String
+    
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            if text.isEmpty {
+                Text(placeholder)
+                    .foregroundColor(Color(.placeholderText))
+                    .padding(.horizontal, 2)
+                    .padding(.top, 7)
+                    .zIndex(1)
+            }
+            AdaptiveTextView(text: $text, height: $height)
+                .background(Color.clear)
+        }
+    }
+}
+
