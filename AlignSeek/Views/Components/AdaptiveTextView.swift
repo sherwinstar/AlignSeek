@@ -15,19 +15,22 @@ struct AdaptiveTextView: UIViewRepresentable {
         textView.font = .systemFont(ofSize: 16)
         textView.backgroundColor = .white
         textView.isScrollEnabled = true
-        textView.text = text
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
+        textView.text = text.isEmpty ? placeholder : text
+        textView.textColor = text.isEmpty ? .placeholderText : .black
+        textView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         textView.textContainer.lineBreakMode = .byWordWrapping
         textView.textContainer.lineFragmentPadding = 0
-        textView.textContainer.lineBreakMode = .byWordWrapping
         textView.textContainer.maximumNumberOfLines = 0
         return textView
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
-        if uiView.text != self.text {
-            uiView.text = self.text
+        // 确保文本更新
+        if uiView.text != text {
+            uiView.text = text
+            uiView.textColor = text.isEmpty ? .placeholderText : .black
         }
+        
         if uiView.window != nil, !context.coordinator.didSetupInitialHeight {
             context.coordinator.didSetupInitialHeight = true
             DispatchQueue.main.async {
@@ -49,6 +52,20 @@ struct AdaptiveTextView: UIViewRepresentable {
             let size = textView.sizeThatFits(CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude))
             DispatchQueue.main.async {
                 self.parent.height = min(max(44, size.height), 120)
+            }
+        }
+        
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            if textView.textColor == .placeholderText {
+                textView.text = ""
+                textView.textColor = .black
+            }
+        }
+        
+        func textViewDidEndEditing(_ textView: UITextView) {
+            if textView.text.isEmpty {
+                textView.text = parent.placeholder
+                textView.textColor = .placeholderText
             }
         }
     }

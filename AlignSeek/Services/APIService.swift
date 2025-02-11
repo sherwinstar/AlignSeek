@@ -29,14 +29,20 @@ class APIService {
         let messages: [Message]
     }
     
-    func sendMessage(_ text: String, image: UIImage? = nil, completion: @escaping (Result<String, Error>) -> Void) {
+    func sendMessage(_ text: String, message: ChatMessage? = nil, completion: @escaping (Result<String, Error>) -> Void) {
         var contents: [Content] = [
             Content(type: "text", text: text, image_base64: nil)
         ]
         
-        if let image = image {
-            if let base64String = image.jpegData(compressionQuality: 0.8)?.base64EncodedString() {
-                contents.append(Content(type: "image", text: nil, image_base64: base64String))
+        // 如果有消息对象，处理其中的附件
+        if let message = message, let mediaUrls = message.medias as? [String] {
+            for mediaPath in mediaUrls {
+                let fullPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(mediaPath).path
+                if let image = UIImage(contentsOfFile: fullPath) {
+                    if let base64String = image.jpegData(compressionQuality: 0.8)?.base64EncodedString() {
+                        contents.append(Content(type: "image", text: nil, image_base64: base64String))
+                    }
+                }
             }
         }
         
@@ -74,13 +80,14 @@ class APIService {
             for line in lines {
                 if line.hasPrefix("data: ") {
                     let jsonString = String(line.dropFirst(6))
+                    // 跳过 [DONE] 标记
+                    if jsonString.trimmingCharacters(in: .whitespaces) == "[DONE]" {
+                        break
+                    }
                     if let data = jsonString.data(using: .utf8),
                        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let choices = json["choices"] as? [[String: Any]],
-                       let firstChoice = choices.first,
-                       let delta = firstChoice["delta"] as? [String: Any],
-                       let content = delta["content"] as? String {
-                        aiResponse += content
+                       let text = json["text"] as? String {
+                        aiResponse += text
                     }
                 }
             }

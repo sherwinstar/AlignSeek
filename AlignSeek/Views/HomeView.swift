@@ -20,13 +20,31 @@ struct HomeView: View {
     // 添加当前会话状态
     @State private var currentSession: ChatSession?
     
+    @State private var selectedAttachments: [AttachmentItem] = []  // 存储选中的附件
+    
+    // 定义附件类型
+    enum AttachmentType {
+        case image(UIImage)
+        case file(URL)
+    }
+    
+    // 附件项结构
+    struct AttachmentItem: Identifiable {
+        let id = UUID()
+        let type: AttachmentType
+    }
+    
     var body: some View {
         NavigationView {
             ZStack {
                 VStack(spacing: 0) {
                     // 顶部按钮
                     HStack {
-                        Button(action: { showingSidebar.toggle() }) {
+                        Button(action: { 
+                            showingSidebar.toggle()
+                            // 隐藏键盘
+                            isFocused = false
+                        }) {
                             Image(systemName: "line.3.horizontal")
                                 .font(.title2)
                                 .foregroundColor(.primary)
@@ -48,6 +66,8 @@ struct HomeView: View {
                         
                         Button(action: {
                             createNewChat()
+                            // 隐藏键盘
+                            isFocused = false
                         }) {
                             Image(systemName: "square.and.pencil")
                                 .font(.title2)
@@ -68,38 +88,52 @@ struct HomeView: View {
                     
                     // 底部区域
                     VStack(spacing: 0) {
-                        // 输入框和录音界面
                         if isRecording {
-                            RecordingView(isRecording: $isRecording)
-                                .transition(.opacity)
-                        } else {
-                            // 输入框
-                            ZStack(alignment: .leading) {
-                                GeometryReader { geometry in
-                                    AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
-                                        .frame(width: geometry.size.width)  // 减去左右padding
-                                        .frame(height: textViewHeight)
-                                }
-                                .frame(height: textViewHeight)
-                                
-                                if inputMessage.isEmpty {
-                                    Text("消息")
-                                        .foregroundColor(Color(UIColor.placeholderText))
-                                        .padding(.horizontal, 0)
-                                        .padding(.vertical, 12)
-                                        .allowsHitTesting(false)
-                                }
+                            RecordingView(isRecording: $isRecording) { transcription in
+                                // 将转写的文字添加到输入框
+                                inputMessage = transcription
+                                print("222:" + transcription)
                             }
-                            .padding(.horizontal, 12)  // 添加水平padding
-//                            .background(
-//                                RoundedRectangle(cornerRadius: 20)
-//                                    .fill(.white)
-//                                    .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 0)
-//                            )
+                            .transition(.opacity)
+                        } else {
+                            // 输入框区域
+                            VStack(spacing: 0) {
+                                ZStack(alignment: .leading) {
+                                    VStack(spacing: 4) {
+                                        if !selectedAttachments.isEmpty {
+                                            ScrollView(.horizontal, showsIndicators: false) {
+                                                HStack(spacing: 8) {
+                                                    ForEach(selectedAttachments) { attachment in
+                                                        AttachmentPreviewView(item: attachment) {
+                                                            if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
+                                                                selectedAttachments.remove(at: index)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                .padding(.trailing, 12)  // 只保留右侧内边距
+                                            }
+                                            .frame(height: 70)
+                                        }
+                                        
+                                        GeometryReader { geometry in
+                                            AdaptiveTextView(text: $inputMessage, height: $textViewHeight, placeholder: "消息")
+                                                .frame(width: geometry.size.width)
+                                                .frame(height: textViewHeight)
+                                        }
+                                        .frame(height: textViewHeight)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                            }
+                            .padding(.top, 6)
+                            .background(Color.white)
                             .clipShape(
                                 UnevenRoundedRectangle(
                                     topLeadingRadius: 20,
-                                    bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 20
+                                    bottomLeadingRadius: 0,
+                                    bottomTrailingRadius: 0,
+                                    topTrailingRadius: 20
                                 )
                             )
                             .overlay(
@@ -108,19 +142,18 @@ struct HomeView: View {
                                         let w = geometry.size.width
                                         let radius: CGFloat = 20
                                         
-                                        // 只绘制上半部分
-                                        path.move(to: CGPoint(x: 0, y: radius))  // 从左边开始
+                                        path.move(to: CGPoint(x: 0, y: radius))
                                         path.addArc(center: CGPoint(x: radius, y: radius),
                                                    radius: radius,
                                                    startAngle: .degrees(180),
                                                    endAngle: .degrees(270),
-                                                   clockwise: false)  // 左上角圆弧
-                                        path.addLine(to: CGPoint(x: w - radius, y: 0))  // 上边线
+                                                   clockwise: false)
+                                        path.addLine(to: CGPoint(x: w - radius, y: 0))
                                         path.addArc(center: CGPoint(x: w - radius, y: radius),
                                                    radius: radius,
                                                    startAngle: .degrees(270),
                                                    endAngle: .degrees(0),
-                                                   clockwise: false)  // 右上角圆弧
+                                                   clockwise: false)
                                     }
                                     .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
                                 }
@@ -250,7 +283,12 @@ struct HomeView: View {
                     VStack {
                         Spacer()
                         HStack {
-                            PlusMenuView(isPresented: $showingPlusMenu)
+                            PlusMenuView(isPresented: $showingPlusMenu,
+                                        onImageSelected: { image in
+                                selectedAttachments.append(AttachmentItem(type: .image(image)))
+                            }, onFileSelected: { url in
+                                selectedAttachments.append(AttachmentItem(type: .file(url)))
+                            })
                                 .padding(.horizontal)
                                 .padding(.bottom, 60)
                                 .scaleEffect(showingPlusMenu ? 1 : 0.1)
@@ -279,12 +317,14 @@ struct HomeView: View {
     
     private func sendMessage() {
         let trimmedMessage = inputMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMessage.isEmpty else { return }
+        
+        // 如果没有文本和附件，不发送
+        guard !trimmedMessage.isEmpty || !selectedAttachments.isEmpty else { return }
         
         // 如果没有当前会话，创建一个新会话
         if currentSession == nil {
             currentSession = CoreDataManager.shared.createChatSession(
-                id: UUID().uuidString,  // 使用UUID作为会话ID
+                id: UUID().uuidString,
                 email: UserDefaults.standard.string(forKey: "userEmail") ?? "",
                 title: trimmedMessage
             )
@@ -292,18 +332,44 @@ struct HomeView: View {
         
         guard let session = currentSession else { return }
         
-        // 创建用户消息
-        let userMessage = CoreDataManager.shared.createChatMessage(
+        // 创建一条消息，包含文本和所有附件
+        let message = CoreDataManager.shared.createChatMessage(
             content: trimmedMessage,
             isUser: true,
             session: session
         )
-        messages.append(userMessage)
+        
+        // 存储所有附件并收集URL
+        var mediaUrls: [String] = []
+        
+        for attachment in selectedAttachments {
+            switch attachment.type {
+            case .image(let image):
+                if let imageURL = saveImageToDocuments(image) {
+                    // 只存储文件名
+                    mediaUrls.append(imageURL.lastPathComponent)
+                }
+            case .file(let url):
+                if let savedURL = saveFileToDocuments(url) {
+                    // 只存储文件名
+                    mediaUrls.append(savedURL.lastPathComponent)
+                }
+            }
+        }
+        
+        // 设置媒体数组
+        message.medias = mediaUrls as NSObject
+        try? CoreDataManager.shared.context.save()
+        
+        messages.append(message)
+        
+        // 清理状态
         inputMessage = ""
+        selectedAttachments = []
         isFocused = false
         
         // 调用 API 获取 AI 响应
-        APIService.shared.sendMessage(trimmedMessage) { result in
+        APIService.shared.sendMessage(trimmedMessage, message: message) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
@@ -322,11 +388,43 @@ struct HomeView: View {
         }
     }
     
+    // 保存图片到文档目录
+    private func saveImageToDocuments(_ image: UIImage) -> URL? {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        let filename = UUID().uuidString + ".jpg"
+        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(filename)
+        
+        do {
+            try data.write(to: fileURL)
+            return fileURL
+        } catch {
+            print("Error saving image: \(error)")
+            return nil
+        }
+    }
+    
+    // 保存文件到文档目录
+    private func saveFileToDocuments(_ sourceURL: URL) -> URL? {
+        let filename = UUID().uuidString + "_" + sourceURL.lastPathComponent
+        let destinationURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(filename)
+        
+        do {
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            return destinationURL
+        } catch {
+            print("Error copying file: \(error)")
+            return nil
+        }
+    }
+    
     // 添加创建新会话的方法
     private func createNewChat() {
         // 清空当前会话和消息
         currentSession = nil
         messages.removeAll()
+        // 清空输入框和预览区域
+        inputMessage = ""
+        selectedAttachments = []
     }
     
     private func logout() {
@@ -341,5 +439,54 @@ struct HomeView: View {
             currentSession = latestSession
             messages = CoreDataManager.shared.fetchChatMessages(for: latestSession.id!)
         }
+    }
+    
+    // 附件预览组件
+    struct AttachmentPreviewView: View {
+        let item: AttachmentItem
+        let onDelete: () -> Void
+        
+        var body: some View {
+            ZStack(alignment: .topTrailing) {
+                switch item.type {
+                case .image(let image):
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 50, height: 50)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .padding(.top, 8)  // 添加顶部内边距给删除按钮留空间
+                        .padding(.trailing, 8)  // 添加右侧内边距给删除按钮留空间
+                case .file(let url):
+                    VStack(spacing: 2) {
+                        Image(systemName: "doc")
+                            .font(.system(size: 24))
+                        Text(url.lastPathComponent)
+                            .font(.caption2)
+                            .lineLimit(1)
+                    }
+                    .frame(width: 50, height: 50)
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.top, 8)  // 添加顶部内边距给删除按钮留空间
+                    .padding(.trailing, 8)  // 添加右侧内边距给删除按钮留空间
+                }
+                
+                Button(action: onDelete) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                }
+                .offset(x: 4, y: -4)  // 调整删除按钮的位置
+            }
+            .frame(width: 66, height: 66)  // 增加整体框架大小以容纳删除按钮
+        }
+    }
+    
+    // 从文件路径加载图片
+    private func loadImage(from path: String?) -> UIImage? {
+        guard let path = path else { return nil }
+        return UIImage(contentsOfFile: path)
     }
 } 

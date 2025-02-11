@@ -56,29 +56,22 @@ class CoreDataManager {
     
     // MARK: - ChatMessage Operations
     
-    private func getNextMessageId(for sessionId: String) -> Int64 {
-        let request: NSFetchRequest<ChatMessage> = ChatMessage.fetchRequest()
-        request.predicate = NSPredicate(format: "session.id == %@", sessionId)
-        request.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        request.fetchLimit = 1
-        
-        do {
-            let messages = try context.fetch(request)
-            return (messages.first?.id ?? 0) + 1
-        } catch {
-            print("Error fetching max message id: \(error)")
-            return 1
-        }
-    }
-    
     func createChatMessage(content: String, isUser: Bool, session: ChatSession) -> ChatMessage {
         let message = ChatMessage(context: context)
-        message.id = getNextMessageId(for: session.id!)  // 手动设置自增ID
+        message.id = getNextMessageId(for: session.id!)
         message.content = content
         message.isUser = isUser
         message.time = Date()
         message.session = session
-        saveContext()
+        message.medias = nil
+        
+        // 保存更改
+        do {
+            try context.save()
+        } catch {
+            print("Error saving message: \(error)")
+        }
+        
         return message
     }
     
@@ -118,5 +111,18 @@ class CoreDataManager {
     func updateChatMessage(_ message: ChatMessage, content: String) {
         message.content = content
         saveContext()
+    }
+    
+    // 获取下一个消息ID
+    private func getNextMessageId(for sessionId: String) -> Int64 {
+        let fetchRequest: NSFetchRequest<ChatMessage> = ChatMessage.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "session.id == %@", sessionId)
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        fetchRequest.fetchLimit = 1
+        
+        if let lastMessage = try? context.fetch(fetchRequest).first {
+            return lastMessage.id + 1
+        }
+        return 1
     }
 } 

@@ -11,7 +11,8 @@ struct PlusMenuView: View {
     @State private var permissionAlertType = ""
     @State private var selectedImage: UIImage?
     
-    var onImagePicked: ((UIImage) -> Void)?
+    var onImageSelected: ((UIImage) -> Void)?
+    var onFileSelected: ((URL) -> Void)?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -69,7 +70,9 @@ struct PlusMenuView: View {
             ImagePicker(
                 sourceType: .photoLibrary,
                 selectedImage: $selectedImage,
-                onImagePicked: onImagePicked,
+                onImagePicked: { image in
+                    onImageSelected?(image)
+                },
                 isPresented: $isPresented
             )
         }
@@ -77,7 +80,9 @@ struct PlusMenuView: View {
             ImagePicker(
                 sourceType: .camera,
                 selectedImage: $selectedImage,
-                onImagePicked: onImagePicked,
+                onImagePicked: { image in
+                    onImageSelected?(image)
+                },
                 isPresented: $isPresented
             )
         }
@@ -87,13 +92,12 @@ struct PlusMenuView: View {
             allowsMultipleSelection: false
         ) { result in
             do {
-                let fileUrl = try result.get().first
-                // 处理选中的文件
-                print("Selected file: \(fileUrl?.lastPathComponent ?? "")")
+                if let fileUrl = try result.get().first {
+                    onFileSelected?(fileUrl)
+                }
             } catch {
                 print("Error selecting file: \(error.localizedDescription)")
             }
-            // 在文件选择器关闭后关闭菜单
             DispatchQueue.main.async {
                 self.isPresented = false
             }

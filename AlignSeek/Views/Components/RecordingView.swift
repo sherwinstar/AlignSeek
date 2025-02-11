@@ -1,11 +1,14 @@
 import SwiftUI
 import AVFoundation
+import Speech
 
 struct RecordingView: View {
     @Binding var isRecording: Bool
     @State private var recordingTime: TimeInterval = 0
     @State private var timer: Timer?
     @State private var audioRecorder: AVAudioRecorder?
+    // 添加一个回调来更新输入框
+    var onTranscriptionComplete: ((String) -> Void)?
     
     var body: some View {
         HStack {
@@ -149,14 +152,41 @@ struct RecordingView: View {
                 try? FileManager.default.removeItem(at: url)
             }
         } else {
-            // 如果完成录音，处理录音文件
+            // 如果完成录音，进行语音识别
             if let url = audioRecorder?.url {
-                print("录音文件保存在: \(url)")
-                // TODO: 处理录音文件，例如上传或播放
+                transcribeAudio(url: url)
             }
         }
         
         isRecording = false
+    }
+    
+    private func transcribeAudio(url: URL) {
+        // 请求语音识别权限
+        SFSpeechRecognizer.requestAuthorization { authStatus in
+            if authStatus == .authorized {
+                let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
+                let request = SFSpeechURLRecognitionRequest(url: url)
+                
+                recognizer?.recognitionTask(with: request) { result, error in
+                    if let error = error {
+                        print("Recognition error: \(error)")
+                        return
+                    }
+                    
+                    if let result = result {
+                        let transcription = result.bestTranscription.formattedString
+                        print("111:" + transcription)
+                        DispatchQueue.main.async {
+                            // 调用回调更新输入框
+                            onTranscriptionComplete?(transcription)
+                            // 删除录音文件
+                            try? FileManager.default.removeItem(at: url)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     private func getDocumentsDirectory() -> URL {
