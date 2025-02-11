@@ -9,12 +9,14 @@ struct PlusMenuView: View {
     @State private var showingFileImporter = false
     @State private var showingPermissionAlert = false
     @State private var permissionAlertType = ""
+    @State private var selectedImage: UIImage?
+    
+    var onImagePicked: ((UIImage) -> Void)?
     
     var body: some View {
         VStack(spacing: 0) {
             Button(action: {
                 checkPhotoLibraryPermission()
-                isPresented = false  // 关闭菜单
             }) {
                 HStack {
                     Text("附加照片")
@@ -31,7 +33,6 @@ struct PlusMenuView: View {
             
             Button(action: {
                 checkCameraPermission()
-                isPresented = false  // 关闭菜单
             }) {
                 HStack {
                     Text("拍照")
@@ -48,7 +49,6 @@ struct PlusMenuView: View {
             
             Button(action: {
                 showingFileImporter = true
-                isPresented = false  // 关闭菜单
             }) {
                 HStack {
                     Text("附加文件")
@@ -66,10 +66,20 @@ struct PlusMenuView: View {
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 0)
         .sheet(isPresented: $showingImagePicker) {
-            ImagePicker(sourceType: .photoLibrary)
+            ImagePicker(
+                sourceType: .photoLibrary,
+                selectedImage: $selectedImage,
+                onImagePicked: onImagePicked,
+                isPresented: $isPresented
+            )
         }
         .sheet(isPresented: $showingCamera) {
-            ImagePicker(sourceType: .camera)
+            ImagePicker(
+                sourceType: .camera,
+                selectedImage: $selectedImage,
+                onImagePicked: onImagePicked,
+                isPresented: $isPresented
+            )
         }
         .fileImporter(
             isPresented: $showingFileImporter,
@@ -82,6 +92,10 @@ struct PlusMenuView: View {
                 print("Selected file: \(fileUrl?.lastPathComponent ?? "")")
             } catch {
                 print("Error selecting file: \(error.localizedDescription)")
+            }
+            // 在文件选择器关闭后关闭菜单
+            DispatchQueue.main.async {
+                self.isPresented = false
             }
         }
         .alert(permissionAlertType, isPresented: $showingPermissionAlert) {
@@ -110,12 +124,12 @@ struct PlusMenuView: View {
     private func checkPhotoLibraryPermission() {
         switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
         case .authorized, .limited:
-            showingImagePicker = true
+            showingImagePicker = true  // 只设置显示相册，不关闭菜单
         case .notDetermined:
             PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
                 DispatchQueue.main.async {
                     if status == .authorized || status == .limited {
-                        showingImagePicker = true
+                        showingImagePicker = true  // 只设置显示相册，不关闭菜单
                     }
                 }
             }
@@ -128,12 +142,12 @@ struct PlusMenuView: View {
     private func checkCameraPermission() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            showingCamera = true
+            showingCamera = true  // 只设置显示相机，不关闭菜单
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 DispatchQueue.main.async {
                     if granted {
-                        showingCamera = true
+                        showingCamera = true  // 只设置显示相机，不关闭菜单
                     }
                 }
             }
@@ -146,6 +160,9 @@ struct PlusMenuView: View {
 
 struct ImagePicker: UIViewControllerRepresentable {
     var sourceType: UIImagePickerController.SourceType
+    @Binding var selectedImage: UIImage?
+    var onImagePicked: ((UIImage) -> Void)?
+    @Binding var isPresented: Bool
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
@@ -169,14 +186,18 @@ struct ImagePicker: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = info[.originalImage] as? UIImage {
-                // 处理选中的图片
-                print("Selected image size: \(image.size)")
+                parent.selectedImage = image
+                parent.onImagePicked?(image)
             }
-            picker.dismiss(animated: true)
+            picker.dismiss(animated: true) {
+                self.parent.isPresented = false  // 选择图片后关闭菜单
+            }
         }
         
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+            picker.dismiss(animated: true) {
+                self.parent.isPresented = false  // 取消选择后关闭菜单
+            }
         }
     }
 } 
