@@ -53,7 +53,7 @@ struct HomeView: View {
                         Spacer()
                         
                         Button(action: {}) {
-                            Text("Test ✨")
+                            Text("HKSense")
                                 .font(.headline)
                                 .foregroundColor(.blue)
                                 .padding(.horizontal, 20)
