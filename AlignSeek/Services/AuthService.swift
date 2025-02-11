@@ -61,22 +61,20 @@ class AuthService {
     }
     
     func sendVerificationCode(email: String, use: VerificationUse) async throws -> AuthResponse {
-        guard var urlComponents = URLComponents(string: verificationURL) else {
+        guard let url = URL(string: verificationURL) else {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
         }
         
-        // 添加查询参数
-        urlComponents.queryItems = [
-            URLQueryItem(name: "recipientEmailAddress", value: email),
-            URLQueryItem(name: "use", value: String(use.rawValue))
+        // 构建 JSON 请求体
+        let requestBody: [String: Any] = [
+            "recipientEmailAddress": email,
+            "use": use.rawValue
         ]
-        
-        guard let url = urlComponents.url else {
-            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
-        }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)  // 设置 JSON 请求体
         
         let (data, _) = try await URLSession.shared.data(for: request)
         let response = try JSONDecoder().decode(AuthResponse.self, from: data)

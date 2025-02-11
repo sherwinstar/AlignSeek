@@ -46,8 +46,8 @@ class APIService {
             }
         }
         
-        let message = Message(role: "user", content: contents)
-        let requestBody = RequestBody(messages: [message])
+        let item = Message(role: "user", content: contents)
+        let requestBody = RequestBody(messages: [item])
         
         var request = URLRequest(url: URL(string: baseURL)!)
         request.httpMethod = "POST"
@@ -67,36 +67,37 @@ class APIService {
                 return
             }
             
+            // 处理响应
             guard let data = data,
                   let responseString = String(data: data, encoding: .utf8) else {
                 completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
                 return
             }
             
-            // 处理 SSE 响应
-            let lines = responseString.components(separatedBy: "\n")
-            var aiResponse = ""
-            
-            for line in lines {
-                if line.hasPrefix("data: ") {
-                    let jsonString = String(line.dropFirst(6))
-                    // 跳过 [DONE] 标记
-                    if jsonString.trimmingCharacters(in: .whitespaces) == "[DONE]" {
-                        break
-                    }
-                    if let data = jsonString.data(using: .utf8),
-                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let text = json["text"] as? String {
-                        aiResponse += text
+                let lines = responseString.components(separatedBy: "\n")
+                var aiResponse = ""
+                
+                for line in lines {
+                    if line.hasPrefix("data: ") {
+                        let jsonString = String(line.dropFirst(6))
+                        if jsonString.trimmingCharacters(in: .whitespaces) == "[DONE]" {
+                            continue
+                        }
+                        
+                        if let data = jsonString.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let text = json["text"] as? String {
+                            aiResponse += text
+                        }
                     }
                 }
-            }
-            
-            completion(.success(aiResponse))
+                
+                completion(.success(aiResponse))
         }
         
         task.resume()
     }
+
 }
 
 extension Image {

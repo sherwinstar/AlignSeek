@@ -369,20 +369,40 @@ struct HomeView: View {
         isFocused = false
         
         // 调用 API 获取 AI 响应
-        APIService.shared.sendMessage(trimmedMessage, message: message) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    let aiMessage = CoreDataManager.shared.createChatMessage(
-                        content: response,
-                        isUser: false,
-                        session: session
-                    )
-                    messages.append(aiMessage)
-                    
-                case .failure(let error):
-                    print("API Error: \(error.localizedDescription)")
-                    // TODO: 显示错误提示
+        if mediaUrls.isEmpty {
+            APIService2.shared.sendMessage(trimmedMessage) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let response):
+                        let aiMessage = CoreDataManager.shared.createChatMessage(
+                            content: response,
+                            isUser: false,
+                            session: session
+                        )
+                        messages.append(aiMessage)
+                        
+                    case .failure(let error):
+                        print("API Error: \(error.localizedDescription)")
+                        // TODO: 显示错误提示
+                    }
+                }
+            }
+        } else {
+            APIService.shared.sendMessage(trimmedMessage, message: message) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let response):
+                        let aiMessage = CoreDataManager.shared.createChatMessage(
+                            content: response,
+                            isUser: false,
+                            session: session
+                        )
+                        messages.append(aiMessage)
+                        
+                    case .failure(let error):
+                        print("API Error: \(error.localizedDescription)")
+                        // TODO: 显示错误提示
+                    }
                 }
             }
         }

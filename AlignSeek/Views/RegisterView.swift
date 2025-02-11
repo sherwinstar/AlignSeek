@@ -70,6 +70,7 @@ struct RegisterView: View {
                     Text(isSendingCode ? "\(countdown)s" : "Send Code")
                         .foregroundColor(.white)
                         .frame(width: 100, height: 56)
+                        .font(.system(size: 14))
                         .background(isSendingCode ? Color.gray : Color.blue)
                         .cornerRadius(16)
                 }
