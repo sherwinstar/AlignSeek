@@ -82,6 +82,9 @@ struct RecordingPageView: View {
                 .padding(.bottom, 80)
             }
         }
+        .onDisappear() {
+            viewModel.stopRecording()
+        }
         .navigationBarHidden(true)
     }
 }
@@ -187,7 +190,7 @@ class RecordingViewModel: NSObject, ObservableObject {
         }
     }
     
-    private func stopRecording() {
+    func stopRecording() {
         isRecording = false
         statusText = "Tap button to talk"
         
