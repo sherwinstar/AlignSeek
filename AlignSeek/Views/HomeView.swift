@@ -192,8 +192,7 @@ struct HomeView: View {
                                             if isWaitingResponse {
                                                 // 如果正在等待响应，取消请求
                                                 currentTask?.cancel()
-                                                APIService.shared.cancelCurrentTask()
-                                                APIService2.shared.cancelCurrentTask()
+                                                GoogleMultiService.shared.cancelCurrentTask()
                                                 isWaitingResponse = false
                                             } else if !inputMessage.isEmpty {
                                                 // 如果有输入内容，发送消息
@@ -512,7 +511,7 @@ struct HomeView: View {
         if mediaUrls.isEmpty {
             currentTask = Task {
                 await withCheckedContinuation { continuation in
-                    APIService2.shared.sendMessage(trimmedMessage) { result in
+                    GoogleMultiService.shared.sendMessage(trimmedMessage) { result in
                         if !Task.isCancelled {
                             DispatchQueue.main.async {
                                 switch result {
@@ -538,9 +537,17 @@ struct HomeView: View {
             }
         } else {
             // 创建一个 Task 来包装回调
+            var images:[UIImage] = []
+            for mediaPath in mediaUrls {
+                let fullPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(mediaPath).path
+                if let image = UIImage(contentsOfFile: fullPath) {
+                    images.append(image)
+                }
+            }
+            
             currentTask = Task {
                 await withCheckedContinuation { continuation in
-                    APIService.shared.sendMessage(trimmedMessage, message: message) { result in
+                    GoogleMultiService.shared.sendMessage(prompt: trimmedMessage, images: images) { result in
                         if !Task.isCancelled {
                             DispatchQueue.main.async {
                                 switch result {

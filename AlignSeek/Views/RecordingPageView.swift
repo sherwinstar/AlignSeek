@@ -201,9 +201,7 @@ class RecordingViewModel: NSObject, ObservableObject {
         recognitionRequest = nil
         recognitionTask?.cancel()
         recognitionTask = nil
-
-        APIService.shared.cancelCurrentTask()
-        APIService2.shared.cancelCurrentTask()
+        GoogleMultiService.shared.cancelCurrentTask()
         synthesizer.stopSpeaking(at: .immediate)
         audioSamples = Array(repeating: 6, count: 40)
     }
@@ -231,7 +229,7 @@ class RecordingViewModel: NSObject, ObservableObject {
         // 暂停录音以防止录到AI的声音
         audioEngine.pause()
         
-        APIService2.shared.sendMessage(textToSend) { [weak self] result in
+        GoogleMultiService.shared.sendMessage(textToSend) { [weak self] result in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
