@@ -77,7 +77,7 @@ struct SidebarView: View {
             }
         }
         .frame(width: UIScreen.main.bounds.width * 0.75)
-        .background(Color(UIColor.systemBackground))
+        .background(Color(hex: "E7EDF6"))
         .alert("Logout ?", isPresented: $showingLogoutAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Logout", role: .destructive) {
