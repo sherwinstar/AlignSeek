@@ -100,6 +100,11 @@ struct LoginView: View {
                 Text(errorMessage)
             }
         }
+        .onAppear {
+            // 预热网络连接
+            let url = URL(string: "https://www.apple.com")!
+            URLSession.shared.dataTask(with: url) { _, _, _ in }.resume()
+        }
     }
     
     private var isValidInput: Bool {

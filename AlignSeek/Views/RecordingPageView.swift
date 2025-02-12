@@ -76,7 +76,7 @@ struct RecordingPageView: View {
                             .frame(width: 64, height: 64)
                     } else {
                         Image("icon_microphone")
-                            .frame(width: 56, height: 56)
+                            .frame(width: 64, height: 64)
                     }
                 }
                 .padding(.bottom, 80)
@@ -192,6 +192,7 @@ class RecordingViewModel: NSObject, ObservableObject {
     
     func stopRecording() {
         isRecording = false
+        isProcessing = false
         statusText = "Tap button to talk"
         
         audioEngine.stop()
