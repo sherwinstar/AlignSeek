@@ -87,7 +87,7 @@ struct HomeView: View {
                         // 聊天区域
                         ScrollView {
                             LazyVStack(spacing: 12) {
-                                ForEach(messages) { message in
+                                ForEach(messages, id:\.id) { message in
                                     MessageBubble(
                                         message: message,
                                         isNewMessage: message.id == newMessageId,
@@ -123,6 +123,7 @@ struct HomeView: View {
                                     print("222:" + transcription)
                                 }
                                 .transition(.opacity)
+                                .padding(.top, 1)
                             } else {
                                 // 输入框区域
                                 VStack(spacing: 4) {
@@ -183,6 +184,7 @@ struct HomeView: View {
                                 )
                                 .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                 .focused($isFocused)
+                                .padding(.top, 1)
                                 .padding(.horizontal, 16)
                             }
                             
