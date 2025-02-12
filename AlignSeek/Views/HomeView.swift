@@ -65,7 +65,7 @@ struct HomeView: View {
                             
                             Spacer()
                             
-                            Text("New Chat")
+                            Text(currentSession?.title ?? "New Chat")
                                 .font(.system(size: 16))
                                 .fontWeight(Font.Weight.bold)
                                 .foregroundColor(Color(hex: 0x222222, alpha: 1))

@@ -52,7 +52,13 @@ class APIService2 {
                let choices = json["choices"] as? [[String: Any]],
                let firstChoice = choices.first,
                let message = firstChoice["message"] as? [String: Any],
-               let content = message["content"] as? String {
+               var content = message["content"] as? String {
+                
+                // 移除 </think> 标签及之前的内容
+                if let range = content.range(of: "</think>") {
+                    content = String(content[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+                
                 completion(.success(content))
             } else {
                 completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to parse response"])))

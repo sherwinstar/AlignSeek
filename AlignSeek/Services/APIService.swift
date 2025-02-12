@@ -92,7 +92,12 @@ class APIService {
                     }
                 }
                 
+                // 在返回 AI 响应之前处理文本
+                if let startRange = aiResponse.range(of: "<｜Assistant｜>") {
+                    aiResponse = String(aiResponse[startRange.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
                 completion(.success(aiResponse))
+                
         }
         
         task.resume()
