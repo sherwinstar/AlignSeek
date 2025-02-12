@@ -83,7 +83,8 @@ struct HomeView: View {
                                 MessageBubble(message: message)
                             }
                         }
-                        .padding()
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     }
                     
                     // 底部区域
