@@ -123,7 +123,7 @@ struct HomeView: View {
                                     print("222:" + transcription)
                                 }
                                 .transition(.opacity)
-                                .padding(.top, 1)
+                                .padding(.top, 6)
                             } else {
                                 // 输入框区域
                                 VStack(spacing: 4) {
@@ -184,7 +184,7 @@ struct HomeView: View {
                                 )
                                 .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                 .focused($isFocused)
-                                .padding(.top, 1)
+                                .padding(.top, 6)
                                 .padding(.horizontal, 16)
                             }
                             

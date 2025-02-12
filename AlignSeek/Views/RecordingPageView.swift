@@ -180,7 +180,6 @@ struct RecordingPageView: View {
     
     private func stopProcessing() {
         synthesizer.stopSpeaking(at: .immediate)  // 立即停止语音播放
-        isProcessing = false
         stopProcessingAnimation()
     }
     
@@ -205,12 +204,13 @@ struct RecordingPageView: View {
                         APIService2.shared.sendMessage(transcription) { result in
                             DispatchQueue.main.async {
 //                                isProcessing = false
-                                stopProcessingAnimation()
+                                
                                 
                                 switch result {
                                 case .success(let response):
                                     speakText(response)
                                 case .failure(let error):
+                                    stopProcessingAnimation()
                                     print("API Error: \(error.localizedDescription)")
                                 }
                             }
@@ -233,7 +233,6 @@ struct RecordingPageView: View {
         
         synthesizerDelegate = SpeechSynthesizerDelegate(onFinish: {
             DispatchQueue.main.async {
-                isProcessing = false
                 stopProcessingAnimation()
             }
         })
