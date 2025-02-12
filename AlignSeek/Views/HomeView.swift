@@ -22,6 +22,9 @@ struct HomeView: View {
     
     @State private var selectedAttachments: [AttachmentItem] = []  // 存储选中的附件
     
+    // 添加一个属性来跟踪新消息的 ID
+    @State private var newMessageId: Int64?
+    
     // 定义附件类型
     enum AttachmentType {
         case image(UIImage)
@@ -38,6 +41,9 @@ struct HomeView: View {
         NavigationView {
             GeometryReader { geometry in
                 ZStack {
+                    Color(hex: 0xE5E6EB)  // 修改背景色为 #E5E6EB
+                        .ignoresSafeArea()
+                    
                     // 主内容
                     VStack(spacing: 0) {
                         // 顶部按钮
@@ -78,7 +84,16 @@ struct HomeView: View {
                         ScrollView {
                             LazyVStack(spacing: 12) {
                                 ForEach(messages) { message in
-                                    MessageBubble(message: message)
+                                    MessageBubble(
+                                        message: message,
+                                        isNewMessage: message.id == newMessageId,
+                                        onTypingComplete: {
+                                            // 打字效果完成后，清除 newMessageId
+                                            if message.id == newMessageId {
+                                                newMessageId = nil
+                                            }
+                                        }
+                                    )
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -410,6 +425,7 @@ struct HomeView: View {
                             session: session
                         )
                         messages.append(aiMessage)
+                        newMessageId = aiMessage.id  // 标记新消息
                         
                     case .failure(let error):
                         print("API Error: \(error.localizedDescription)")
@@ -428,6 +444,7 @@ struct HomeView: View {
                             session: session
                         )
                         messages.append(aiMessage)
+                        newMessageId = aiMessage.id  // 标记新消息
                         
                     case .failure(let error):
                         print("API Error: \(error.localizedDescription)")
