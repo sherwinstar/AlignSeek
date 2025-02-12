@@ -8,6 +8,9 @@ class APIService {
     
     private init() {}
     
+    // 添加一个属性来存储当前任务
+    private var currentTask: URLSessionDataTask?
+    
     struct Message: Codable {
         let role: String
         let content: [Content]
@@ -30,6 +33,9 @@ class APIService {
     }
     
     func sendMessage(_ text: String, message: ChatMessage? = nil, completion: @escaping (Result<String, Error>) -> Void) {
+        // 如果有正在进行的任务，先取消它
+        currentTask?.cancel()
+        
         var contents: [Content] = [
             Content(type: "text", text: text, image_base64: nil)
         ]
@@ -61,8 +67,14 @@ class APIService {
             return
         }
         
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
+        currentTask = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            defer { self?.currentTask = nil }
+            
+            if let error = error as NSError? {
+                // 检查是否是取消操作
+                if error.code == NSURLErrorCancelled {
+                    return // 如果是取消操作，直接返回
+                }
                 completion(.failure(error))
                 return
             }
@@ -100,9 +112,14 @@ class APIService {
                 
         }
         
-        task.resume()
+        currentTask?.resume()
     }
-
+    
+    // 添加取消方法
+    func cancelCurrentTask() {
+        currentTask?.cancel()
+        currentTask = nil
+    }
 }
 
 extension Image {

@@ -181,6 +181,8 @@ struct RecordingPageView: View {
     private func stopProcessing() {
         synthesizer.stopSpeaking(at: .immediate)  // 立即停止语音播放
         stopProcessingAnimation()
+        APIService.shared.cancelCurrentTask()
+        APIService2.shared.cancelCurrentTask()
     }
     
     private func transcribeAudio(url: URL) {
@@ -257,6 +259,8 @@ struct RecordingPageView: View {
         
         // 停止语音播放和动画
         if isProcessing {
+            APIService.shared.cancelCurrentTask()
+            APIService2.shared.cancelCurrentTask()
             synthesizer.stopSpeaking(at: .immediate)
             isProcessing = false
             stopProcessingAnimation()

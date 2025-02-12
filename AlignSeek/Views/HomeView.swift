@@ -29,6 +29,10 @@ struct HomeView: View {
     @State private var isWaitingResponse = false
     @State private var currentTask: Task<Void, Never>?  // 用于取消任务
     
+    // 添加 ScrollView 代理
+    @State private var scrollProxy: ScrollViewProxy?
+    @State private var bottomID = "bottom"  // 用于标识底部
+    
     // 定义附件类型
     enum AttachmentType {
         case image(UIImage)
@@ -85,23 +89,45 @@ struct HomeView: View {
                         .padding(.horizontal)
                         
                         // 聊天区域
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(messages, id:\.id) { message in
-                                    MessageBubble(
-                                        message: message,
-                                        isNewMessage: message.id == newMessageId,
-                                        onTypingComplete: {
-                                            // 打字效果完成后，清除 newMessageId
-                                            if message.id == newMessageId {
-                                                newMessageId = nil
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(messages, id:\.id) { message in
+                                        MessageBubble(
+                                            message: message,
+                                            isNewMessage: message.id == newMessageId,
+                                            onTypingComplete: {
+                                                if message.id == newMessageId {
+                                                    newMessageId = nil
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
+                                    
+                                    // 添加底部占位符
+                                    Color.clear
+                                        .frame(height: 1)  // 改回1的高度
+                                        .id(bottomID)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                            }
+                            .onChange(of: messages.count) { _ in
+                                // 当消息数量变化时滚动到底部
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {  // 减少延迟时间
+                                    withAnimation(.easeOut(duration: 0.2)) {  // 使用更短的动画时间
+                                        proxy.scrollTo(bottomID, anchor: .bottom)
+                                    }
                                 }
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .onAppear {
+                                // 初始加载时滚动到底部
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {  // 减少延迟时间
+                                    withAnimation(.easeOut(duration: 0.2)) {  // 使用更短的动画时间
+                                        proxy.scrollTo(bottomID, anchor: .bottom)
+                                    }
+                                }
+                            }
                         }
                         .simultaneousGesture(
                             DragGesture().onChanged { _ in
@@ -158,6 +184,8 @@ struct HomeView: View {
                                             if isWaitingResponse {
                                                 // 如果正在等待响应，取消请求
                                                 currentTask?.cancel()
+                                                APIService.shared.cancelCurrentTask()
+                                                APIService2.shared.cancelCurrentTask()
                                                 isWaitingResponse = false
                                             } else if !inputMessage.isEmpty {
                                                 // 如果有输入内容，发送消息
@@ -414,13 +442,16 @@ struct HomeView: View {
         // 清理状态
         inputMessage = ""
         selectedAttachments = []
-        isFocused = false
+        isFocused = false  // 隐藏键盘
         
-        isWaitingResponse = true  // 开始等待响应
+        // 滚动到底部
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            scrollToBottom()
+        }
         
-        // 调用 API 获取 AI 响应
+        isWaitingResponse = true
+        
         if mediaUrls.isEmpty {
-            // 创建一个 Task 来包装回调
             currentTask = Task {
                 await withCheckedContinuation { continuation in
                     APIService2.shared.sendMessage(trimmedMessage) { result in
@@ -435,11 +466,16 @@ struct HomeView: View {
                                     )
                                     messages.append(aiMessage)
                                     newMessageId = aiMessage.id
-                                    isWaitingResponse = false  // 响应完成
+                                    isWaitingResponse = false
+                                    
+                                    // 滚动到底部
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        scrollToBottom()
+                                    }
                                     
                                 case .failure(let error):
                                     print("API Error: \(error.localizedDescription)")
-                                    isWaitingResponse = false  // 发生错误时也要重置状态
+                                    isWaitingResponse = false
                                 }
                             }
                         }
@@ -578,5 +614,12 @@ struct HomeView: View {
     private func loadImage(from path: String?) -> UIImage? {
         guard let path = path else { return nil }
         return UIImage(contentsOfFile: path)
+    }
+    
+    // 添加滚动到底部的方法
+    private func scrollToBottom(animated: Bool = true) {
+        withAnimation(animated ? .easeOut(duration: 0.3) : nil) {
+            scrollProxy?.scrollTo(bottomID, anchor: .bottom)
+        }
     }
 } 
