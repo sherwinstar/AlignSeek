@@ -107,9 +107,14 @@ struct HomeView: View {
                                         )
                                     }
                                     
+                                    // 显示 Loading 状态
+                                    if isWaitingResponse {
+                                        LoadingMessageBubble()
+                                    }
+                                    
                                     // 添加底部占位符
                                     Color.clear
-                                        .frame(height: 1)  // 改回1的高度
+                                        .frame(height: 1)
                                         .id(bottomID)
                                 }
                                 .padding(.horizontal, 16)
@@ -117,8 +122,8 @@ struct HomeView: View {
                             }
                             .onChange(of: messages.count) { _ in
                                 // 当消息数量变化时滚动到底部
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {  // 减少延迟时间
-                                    withAnimation(.easeOut(duration: 0.2)) {  // 使用更短的动画时间
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {  // 减少延迟时间
+                                    withAnimation(.easeOut(duration: 0.1)) {  // 使用更短的动画时间
                                         proxy.scrollTo(bottomID, anchor: .bottom)
                                     }
                                 }
@@ -177,7 +182,7 @@ struct HomeView: View {
                                         AdaptiveTextViewWithPlaceholder(
                                             text: $inputMessage,
                                             height: $textViewHeight,
-                                            placeholder: "To send a message to HKChat"
+                                            placeholder: "To send a message to HKSense"
                                         )
                                         .frame(height: textViewHeight)
                                         .disabled(isWaitingResponse)  // 等待响应时禁用输入
@@ -497,7 +502,7 @@ struct HomeView: View {
         // 等待键盘消失后再滚动到底部
         // 键盘动画大约需要 0.25 秒
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(.easeOut(duration: 0.1)) {
                 scrollProxy?.scrollTo(bottomID, anchor: .bottom)
             }
         }
@@ -517,14 +522,9 @@ struct HomeView: View {
                                         isUser: false,
                                         session: session
                                     )
+                                    isWaitingResponse = false
                                     messages.append(aiMessage)
                                     newMessageId = aiMessage.id
-                                    isWaitingResponse = false
-                                    
-                                    // 收到 AI 响应后立即滚动到底部
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        scrollProxy?.scrollTo(bottomID, anchor: .bottom)
-                                    }
                                     
                                 case .failure(let error):
                                     print("API Error: \(error.localizedDescription)")
@@ -550,9 +550,9 @@ struct HomeView: View {
                                         isUser: false,
                                         session: session
                                     )
+                                    isWaitingResponse = false  // 响应完成
                                     messages.append(aiMessage)
                                     newMessageId = aiMessage.id
-                                    isWaitingResponse = false  // 响应完成
                                     
                                 case .failure(let error):
                                     print("API Error: \(error.localizedDescription)")

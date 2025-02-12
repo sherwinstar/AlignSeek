@@ -96,4 +96,52 @@ struct MessageBubble: View {
             }
         }
     }
+}
+
+// 添加 LoadingMessageBubble 组件
+struct LoadingMessageBubble: View {
+    var body: some View {
+        HStack(alignment: .top) {
+            // AI 头像
+            Image("icon_ai")
+                .resizable()
+                .frame(width: 30, height: 30)
+            
+            // Loading 动画
+            HStack(spacing: 4) {
+                ForEach(0..<3) { index in
+                    Circle()
+                        .fill(Color(hex: "206EFF"))
+                        .frame(width: 6, height: 6)
+                        .opacity(0.3)
+                        .animation(
+                            Animation
+                                .easeInOut(duration: 0.5)
+                                .repeatForever()
+                                .delay(0.2 * Double(index)),
+                            value: UUID()
+                        )
+                }
+            }
+            .padding(12)
+            .background(Color.white)
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 8,
+                    bottomLeadingRadius: 8,
+                    bottomTrailingRadius: 8,
+                    topTrailingRadius: 8
+                )
+            )
+            
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .onAppear {
+            // 触发动画
+            withAnimation(.easeInOut(duration: 0.5).repeatForever()) {
+                // 动画状态更新
+            }
+        }
+    }
 } 
