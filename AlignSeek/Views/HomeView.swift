@@ -7,7 +7,7 @@ struct HomeView: View {
     @State private var messages: [ChatMessage] = []
     @State private var inputMessage = ""
     @FocusState private var isFocused: Bool
-    @State private var textViewHeight: CGFloat = 44
+    @State private var textViewHeight: CGFloat = 52
     @State private var isSearchSelected = false
     @State private var isReasoningSelected = false
     @State private var showingPlusMenu = false
@@ -84,6 +84,16 @@ struct HomeView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
                         }
+                        .simultaneousGesture(
+                            DragGesture().onChanged { _ in
+                                // 滚动时隐藏键盘
+                                isFocused = false
+                            }
+                        )
+                        .onTapGesture {
+                            // 点击时隐藏键盘
+                            isFocused = false
+                        }
                         
                         // 底部区域
                         VStack(spacing: 0) {
@@ -97,68 +107,67 @@ struct HomeView: View {
                             } else {
                                 // 输入框区域
                                 VStack(spacing: 0) {
-                                    ZStack(alignment: .leading) {
-                                        VStack(spacing: 4) {
-                                            if !selectedAttachments.isEmpty {
-                                                ScrollView(.horizontal, showsIndicators: false) {
-                                                    HStack(spacing: 8) {
-                                                        ForEach(selectedAttachments) { attachment in
-                                                            AttachmentPreviewView(item: attachment) {
-                                                                if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
-                                                                    selectedAttachments.remove(at: index)
-                                                                }
+                                    VStack(spacing: 4) {
+                                        if !selectedAttachments.isEmpty {
+                                            ScrollView(.horizontal, showsIndicators: false) {
+                                                HStack(spacing: 8) {
+                                                    ForEach(selectedAttachments) { attachment in
+                                                        AttachmentPreviewView(item: attachment) {
+                                                            if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
+                                                                selectedAttachments.remove(at: index)
                                                             }
                                                         }
                                                     }
-                                                    .padding(.trailing, 12)  // 只保留右侧内边距
                                                 }
-                                                .frame(height: 70)
+                                                .padding(.trailing, 12)
                                             }
-                                            
+                                            .frame(height: 70)
+                                        }
+                                        
+                                        HStack(spacing: 6) {  // 添加水平布局，spacing为12dp
                                             AdaptiveTextViewWithPlaceholder(
                                                 text: $inputMessage,
                                                 height: $textViewHeight,
                                                 placeholder: "To send a message to HKChat"
                                             )
                                             .frame(height: textViewHeight)
-                                        }
-                                    }
-                                    .padding(.horizontal, 12)
-                                }
-                                .padding(.top, 6)
-                                .background(Color.white)
-                                .clipShape(
-                                    UnevenRoundedRectangle(
-                                        topLeadingRadius: 20,
-                                        bottomLeadingRadius: 0,
-                                        bottomTrailingRadius: 0,
-                                        topTrailingRadius: 20
-                                    )
-                                )
-                                .overlay(
-                                    GeometryReader { geometry in
-                                        Path { path in
-                                            let w = geometry.size.width
-                                            let radius: CGFloat = 20
                                             
-                                            path.move(to: CGPoint(x: 0, y: radius))
-                                            path.addArc(center: CGPoint(x: radius, y: radius),
-                                                       radius: radius,
-                                                       startAngle: .degrees(180),
-                                                       endAngle: .degrees(270),
-                                                       clockwise: false)
-                                            path.addLine(to: CGPoint(x: w - radius, y: 0))
-                                            path.addArc(center: CGPoint(x: w - radius, y: radius),
-                                                       radius: radius,
-                                                       startAngle: .degrees(270),
-                                                       endAngle: .degrees(0),
-                                                       clockwise: false)
+                                            // 发送按钮
+                                            Button(action: {
+                                                if !inputMessage.isEmpty {
+                                                    sendMessage()
+                                                }
+                                            }) {
+                                                Image(inputMessage.isEmpty ? "icon_send": "icon_send_enable")
+                                                    .frame(width: 24, height: 24)
+                                                
+//                                                Image("icon_send")
+//                                                    .renderingMode(.template)
+//                                                    .frame(width: 24, height: 24)
+//                                                    .foregroundColor(inputMessage.isEmpty ? 
+//                                                        Color(hex: 0x1B2559).opacity(0.2) :  // 空时是 #1B2559 20%透明度
+//                                                        Color(hex: 0x1D2129)                 // 非空时是 #191D28 不透明
+//                                                    )
+                                            }
+                                            .frame(width: 24, height: 24)
+                                            .padding(.trailing, 12)  // 右边距12dp
                                         }
-                                        .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            isFocused = true
+                                        }
                                     }
+                                    
+                                }
+                                .background(Color.white)
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color(hex: "E5E6EB"), lineWidth: 1)
                                 )
+                                .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                 .focused($isFocused)
-                                .transition(.opacity)
+                                .padding(.horizontal, 16)
                             }
                             
                             // 底部工具栏
@@ -241,11 +250,7 @@ struct HomeView: View {
                                     }
                                     
                                     Button(action: {
-                                        if !inputMessage.isEmpty {
-                                            sendMessage()
-                                        } else {
-                                            isShowingRecordingPage = true
-                                        }
+                                        isShowingRecordingPage = true
                                     }) {
                                         Image("icon_wave")
                                             .frame(width: 29, height: 29)

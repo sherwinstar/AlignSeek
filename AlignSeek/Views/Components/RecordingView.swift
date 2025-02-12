@@ -2,12 +2,28 @@ import SwiftUI
 import AVFoundation
 import Speech
 
+struct WaveformView: View {
+    let samples: [CGFloat] // 声音样本数据
+    let isRecording: Bool
+    
+    var body: some View {
+        HStack(spacing: 2) {  // 波形条之间间距2dp
+            ForEach(0..<40, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1)  // 1dp的圆角
+                    .fill(isRecording ? Color(hex: 0x206EFF) : Color(hex: 0x828282))
+                    .frame(width: 2, height: max(6, samples[safe: index] ?? 6))  // 最小高度6dp，最大28dp
+            }
+        }
+    }
+}
+
 struct RecordingView: View {
     @Binding var isRecording: Bool
     @State private var recordingTime: TimeInterval = 0
     @State private var timer: Timer?
     @State private var audioRecorder: AVAudioRecorder?
-    // 添加一个回调来更新输入框
+    @State private var samples: [CGFloat] = Array(repeating: 6, count: 40)
+    @State private var meterTimer: Timer?
     var onTranscriptionComplete: ((String) -> Void)?
     
     var body: some View {
@@ -16,28 +32,24 @@ struct RecordingView: View {
             Button(action: {
                 stopRecording(cancelled: true)
             }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 24))
-                    .foregroundColor(.black)
-                    .frame(width: 36, height: 36)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(Circle())
+                Image("icon_close_mini")
+                    .frame(width: 29, height: 29)
             }
+            .padding(.leading, 12)
             
             Spacer()
             
-            // 录音波形和时间
-            VStack(spacing: 4) {
-                // 录音波形图
-                Image(systemName: "waveform")
-                    .font(.system(size: 24))
-                    .foregroundColor(.blue)
-                    .opacity(isRecording ? 1 : 0.5)
+            // 波形和时间
+            HStack(spacing: 8) {
+                // 自定义波形视图
+                WaveformView(samples: samples, isRecording: isRecording)
+                    .frame(height: 24)  // 最大高度28dp
                 
                 // 录音时间
-                Text(timeString(from: recordingTime))
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
+                Text(String(format: "%02d:%02d", Int(recordingTime) / 60, Int(recordingTime) % 60))
+                    .font(.system(size: 15))
+                    .foregroundColor(Color(hex: 0x1D2129))
+                    .monospacedDigit()
             }
             
             Spacer()
@@ -46,105 +58,96 @@ struct RecordingView: View {
             Button(action: {
                 stopRecording(cancelled: false)
             }) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 24))
-                    .foregroundColor(.black)
-                    .frame(width: 36, height: 36)
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .clipShape(Circle())
+                Image("icon_send_audio")
+                    .frame(width: 29, height: 29)
             }
+            .padding(.trailing, 12)
         }
-        .padding(.horizontal, 16)
-        .frame(height: 60)
+        .frame(height: 52)
         .background(Color.white)
-        .clipShape(
-            UnevenRoundedRectangle(
-                topLeadingRadius: 20,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 20
-            )
-        )
+        .cornerRadius(16)
         .overlay(
-            GeometryReader { geometry in
-                Path { path in
-                    let w = geometry.size.width
-                    let radius: CGFloat = 20
-                    
-                    // 只绘制上半部分
-                    path.move(to: CGPoint(x: 0, y: radius))  // 从左边开始
-                    path.addArc(center: CGPoint(x: radius, y: radius),
-                               radius: radius,
-                               startAngle: .degrees(180),
-                               endAngle: .degrees(270),
-                               clockwise: false)  // 左上角圆弧
-                    path.addLine(to: CGPoint(x: w - radius, y: 0))  // 上边线
-                    path.addArc(center: CGPoint(x: w - radius, y: radius),
-                               radius: radius,
-                               startAngle: .degrees(270),
-                               endAngle: .degrees(0),
-                               clockwise: false)  // 右上角圆弧
-                }
-                .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
-            }
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(hex: "E5E6EB"), lineWidth: 1)
         )
+        .padding(.horizontal, 16)
+        .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
         .onAppear {
             startRecording()
         }
         .onDisappear {
             timer?.invalidate()
             timer = nil
+            meterTimer?.invalidate()
+            meterTimer = nil
         }
     }
     
-    private func timeString(from timeInterval: TimeInterval) -> String {
-        let minutes = Int(timeInterval) / 60
-        let seconds = Int(timeInterval) % 60
-        return String(format: "%d:%02d", minutes, seconds)
+    private func startRecording() {
+        // 设置录音会话
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setCategory(.playAndRecord, mode: .default)
+        try? audioSession.setActive(true)
+        
+        // 设置录音文件路径（临时文件）
+        let audioFilename = FileManager.default.temporaryDirectory.appendingPathComponent("recording.wav")
+        
+        // 录音设置
+        let settings: [String: Any] = [
+            AVFormatIDKey: Int(kAudioFormatLinearPCM),
+            AVSampleRateKey: 44100.0,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
+        
+        // 创建录音器
+        audioRecorder = try? AVAudioRecorder(url: audioFilename, settings: settings)
+        audioRecorder?.isMeteringEnabled = true
+        audioRecorder?.record()
+        
+        // 开始计时
+        startTimer()
+        
+        // 开始音量监测
+        startMeterTimer()
     }
     
-    private func startRecording() {
-        // 请求麦克风权限
-        AVAudioSession.sharedInstance().requestRecordPermission { granted in
-            if granted {
-                // 设置录音会话
-                try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default)
-                try? AVAudioSession.sharedInstance().setActive(true)
-                
-                // 设置录音文件路径
-                let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
-                
-                // 录音设置
-                let settings = [
-                    AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                    AVSampleRateKey: 44100,
-                    AVNumberOfChannelsKey: 2,
-                    AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-                ]
-                
-                // 创建录音器
-                do {
-                    audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
-                    audioRecorder?.record()
-                    isRecording = true
-                    
-                    // 开始计时
-                    timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                        recordingTime += 1
-                    }
-                } catch {
-                    print("录音失败: \(error.localizedDescription)")
-                }
-            }
+    private func startTimer() {
+        // 开始计时
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            recordingTime += 1
+        }
+    }
+    
+    private func startMeterTimer() {
+        meterTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            audioRecorder?.updateMeters()
+            let power = audioRecorder?.averagePower(forChannel: 0) ?? -160
+            
+            // 将 power 转换为 0-1 范围
+            let normalizedPower = (power + 160) / 160
+            
+            // 计算高度：6dp 到 24dp
+            let height = 6 + (normalizedPower * 18)
+            
+            // 向左移动现有样本
+            var newSamples = self.samples
+            newSamples.removeFirst()
+            newSamples.append(CGFloat(height))
+            
+            self.samples = newSamples
         }
     }
     
     private func stopRecording(cancelled: Bool) {
+        // 停止计时器
         timer?.invalidate()
         timer = nil
+        meterTimer?.invalidate()
+        meterTimer = nil
         
+        // 停止录音
         audioRecorder?.stop()
-        try? AVAudioSession.sharedInstance().setActive(false)
         
         if cancelled {
             // 如果取消录音，删除录音文件
@@ -157,6 +160,10 @@ struct RecordingView: View {
                 transcribeAudio(url: url)
             }
         }
+        
+        // 清理录音器
+        audioRecorder = nil
+        try? AVAudioSession.sharedInstance().setActive(false)
         
         isRecording = false
     }
@@ -188,8 +195,11 @@ struct RecordingView: View {
             }
         }
     }
-    
-    private func getDocumentsDirectory() -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+}
+
+// 安全数组访问
+extension Array {
+    subscript(safe index: Index) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 } 
