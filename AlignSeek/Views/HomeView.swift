@@ -33,6 +33,9 @@ struct HomeView: View {
     @State private var scrollProxy: ScrollViewProxy?
     @State private var bottomID = "bottom"  // 用于标识底部
     
+    // 添加手势状态
+    @GestureState private var dragOffset: CGFloat = 0
+    
     // 定义附件类型
     enum AttachmentType {
         case image(UIImage)
@@ -311,42 +314,89 @@ struct HomeView: View {
                         .background(.white)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .gesture(
+                        DragGesture()
+                            .updating($dragOffset) { value, state, _ in
+                                if !showingSidebar && value.translation.width > 0 && value.startLocation.x < 50 {
+                                    // 只允许从左边缘右滑打开
+                                    state = value.translation.width
+                                }
+                            }
+                            .onEnded { value in
+                                let threshold = geometry.size.width * 0.15
+                                if !showingSidebar && value.translation.width > threshold && value.startLocation.x < 50 {
+                                    showingSidebar = true
+                                }
+                            }
+                    )
                     
                     // 遮罩和侧边栏
-                    if showingSidebar {
-                        ZStack {
+                    if showingSidebar || dragOffset > 0 {
+                        ZStack(alignment: .leading) {
                             // 遮罩
-                            Color.black.opacity(0.3)
+                            Color.black
+                                .opacity(min((showingSidebar ? 0.3 : 0) + dragOffset / (UIScreen.main.bounds.width * 0.75) * 0.3, 0.3))
                                 .ignoresSafeArea()
                                 .onTapGesture {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                         showingSidebar = false
                                     }
                                 }
-                                .transition(.opacity)
                             
                             // 侧边栏
-                            HStack(spacing: 0) {
-                                SidebarView(
-                                    isPresented: $showingSidebar,
-                                    currentSession: $currentSession,
-                                    onSessionSelected: { session in
-                                        currentSession = session
-                                        messages = CoreDataManager.shared.fetchChatMessages(for: session.id!)
-                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
-                                            showingSidebar = false
+                            SidebarView(
+                                isPresented: $showingSidebar,
+                                currentSession: $currentSession,
+                                onSessionSelected: { session in
+                                    currentSession = session
+                                    messages = CoreDataManager.shared.fetchChatMessages(for: session.id!)
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        showingSidebar = false
+                                    }
+                                }
+                            )
+                            .frame(width: UIScreen.main.bounds.width * 0.75)
+                            .background(Color(hex: "E7EDF6"))
+                            .offset(x: {
+                                let sidebarWidth = UIScreen.main.bounds.width * 0.75
+                                let baseOffset = showingSidebar ? 0 : -sidebarWidth
+                                // 限制拖动偏移量在合理范围内
+                                let limitedDragOffset = if showingSidebar {
+                                    min(max(dragOffset, -sidebarWidth), 0)
+                                } else {
+                                    min(max(dragOffset, 0), sidebarWidth)
+                                }
+                                return baseOffset + limitedDragOffset
+                            }())
+                        }
+                        .zIndex(1)
+                        .gesture(
+                            DragGesture()
+                                .updating($dragOffset) { value, state, _ in
+                                    if showingSidebar {
+                                        // 已显示状态：只允许左滑，且限制范围
+                                        if value.translation.width < 0 {
+                                            state = value.translation.width
+                                        }
+                                    } else {
+                                        // 未显示状态：只允许从左边缘右滑，且限制范围
+                                        if value.translation.width > 0 && value.startLocation.x < 50 {
+                                            state = value.translation.width
                                         }
                                     }
-                                )
-                                
-                                Spacer()
-                            }
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .leading).combined(with: .opacity),
-                                removal: .move(edge: .leading).combined(with: .opacity)
-                            ))
-                        }
-                        .zIndex(1)  // 确保遮罩和侧边栏在最上层
+                                }
+                                .onEnded { value in
+                                    let sidebarWidth = UIScreen.main.bounds.width * 0.75
+                                    let threshold = sidebarWidth * 0.5
+                                    if showingSidebar {
+                                        // 已显示状态：左滑超过阈值则关闭
+                                        showingSidebar = value.translation.width > -threshold
+                                    } else if value.startLocation.x < 50 {
+                                        // 未显示状态：从左边缘右滑超过阈值则打开
+                                        showingSidebar = value.translation.width > threshold
+                                    }
+                                }
+                        )
                     }
                     
                     // 弹出菜单
