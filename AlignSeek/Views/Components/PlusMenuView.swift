@@ -20,7 +20,7 @@ struct PlusMenuView: View {
                 checkPhotoLibraryPermission()
             }) {
                 HStack {
-                    Text("附加照片")
+                    Text("Image")
                         .font(.system(size: 17))
                     Spacer()
                     Image(systemName: "photo")
@@ -36,7 +36,7 @@ struct PlusMenuView: View {
                 checkCameraPermission()
             }) {
                 HStack {
-                    Text("拍照")
+                    Text("Photo")
                         .font(.system(size: 17))
                     Spacer()
                     Image(systemName: "camera")
@@ -52,7 +52,7 @@ struct PlusMenuView: View {
                 showingFileImporter = true
             }) {
                 HStack {
-                    Text("附加文件")
+                    Text("Document")
                         .font(.system(size: 17))
                     Spacer()
                     Image(systemName: "folder")
@@ -103,12 +103,12 @@ struct PlusMenuView: View {
             }
         }
         .alert(permissionAlertType, isPresented: $showingPermissionAlert) {
-            Button("设置", role: .none) {
+            Button("Setting", role: .none) {
                 if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(settingsUrl)
                 }
             }
-            Button("取消", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text(getPermissionMessage())
         }

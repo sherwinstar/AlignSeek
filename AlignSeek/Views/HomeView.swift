@@ -49,22 +49,17 @@ struct HomeView: View {
                                 // 隐藏键盘
                                 isFocused = false
                             }) {
-                                Image(systemName: "line.3.horizontal")
-                                    .font(.title2)
-                                    .foregroundColor(.primary)
+                                Image("icon_menu")
+                                    .frame(width: 29, height: 29)
                             }
                             
                             Spacer()
                             
-                            Button(action: {}) {
-                                Text("HKSense")
-                                    .font(.headline)
-                                    .foregroundColor(.blue)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 8)
-                                    .background(Color(UIColor.secondarySystemBackground))
-                                    .cornerRadius(20)
-                            }
+                            Text("New Chat")
+                                .font(.system(size: 16))
+                                .fontWeight(Font.Weight.bold)
+                                .foregroundColor(Color(hex: 0x222222, alpha: 1))
+                            
                             
                             Spacer()
                             
@@ -73,9 +68,8 @@ struct HomeView: View {
                                 // 隐藏键盘
                                 isFocused = false
                             }) {
-                                Image(systemName: "square.and.pencil")
-                                    .font(.title2)
-                                    .foregroundColor(.primary)
+                                Image("icon_plus_circle")
+                                    .frame(width: 29, height: 29)
                             }
                         }
                         .padding(.horizontal)
@@ -124,7 +118,7 @@ struct HomeView: View {
                                             AdaptiveTextViewWithPlaceholder(
                                                 text: $inputMessage,
                                                 height: $textViewHeight,
-                                                placeholder: "消息"
+                                                placeholder: "To send a message to HKChat"
                                             )
                                             .frame(height: textViewHeight)
                                         }
@@ -170,18 +164,14 @@ struct HomeView: View {
                             // 底部工具栏
                             HStack {
                                 // 左侧按钮组
-                                HStack(spacing: 16) {
+                                HStack(spacing: 4) {
                                     Button(action: { 
                                         showingPlusMenu.toggle()
                                     }) {
-                                        Image(systemName: "plus")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(isSearchSelected || isReasoningSelected ? .gray : .black)
-                                            .frame(width: 36, height: 36)
-                                            .background(Color(UIColor.systemGray6))
-                                            .clipShape(Circle())
+                                        Image("icon_add_file")
+                                            .frame(width: 29, height: 29)
+                                            .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                     }
-                                    .disabled(isSearchSelected || isReasoningSelected)
                                     .background(
                                         GeometryReader { geometry in
                                             Color.clear.onAppear {
@@ -190,48 +180,64 @@ struct HomeView: View {
                                         }
                                     )
                                     
-                                    Button(action: { isSearchSelected.toggle() }) {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "globe")
-                                                .font(.system(size: 24))
-                                                .foregroundColor(isSearchSelected ? .blue : .black)
-                                            Text("搜索")
-                                                .font(.system(size: 17))
-                                                .foregroundColor(isSearchSelected ? .blue : .black)
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(isSearchSelected ? Color.blue.opacity(0.1) : .clear)
-                                        .clipShape(Capsule())
-                                    }
-                                    
                                     Button(action: { isReasoningSelected.toggle() }) {
                                         HStack(spacing: 4) {
-                                            Image(systemName: "lightbulb")
-                                                .font(.system(size: 24))
-                                                .foregroundColor(isReasoningSelected ? .blue : .black)
-                                            Text("推理")
-                                                .font(.system(size: 17))
-                                                .foregroundColor(isReasoningSelected ? .blue : .black)
+                                            Image("icon_lamp")
+                                                .renderingMode(.template)
+                                                .frame(width: 18, height: 18)
+                                                .padding(.vertical, 5.5)
+                                                .foregroundColor(isReasoningSelected ? Color(hex: 0x206EFF, alpha: 1) : Color(hex: 0x828282, alpha: 1))
+                                            Text("Deepthink")
+                                                .font(.system(size: 15))
+                                                .fontWeight(Font.Weight.medium)
+                                                .foregroundColor(isReasoningSelected ? Color(hex: 0x206EFF, alpha: 1) : Color(hex: 0x828282, alpha: 1))
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(isReasoningSelected ? Color.blue.opacity(0.1) : .clear)
-                                        .clipShape(Capsule())
+                                        .padding(.horizontal, 6)
+                                        .background(isReasoningSelected ? Color(hex: "EBF2FF") : .white)
+                                        .cornerRadius(16)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(isReasoningSelected ? Color(hex: "C0D6FF") : Color(hex: "E5E6EB"), lineWidth: 1)
+                                        )
+                                        .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                     }
+                                    
+                                    Button(action: { isSearchSelected.toggle() }) {
+                                        HStack(spacing: 4) {
+                                            Image("icon_globe")
+                                                .renderingMode(.template)
+                                                .frame(width: 18, height: 18)
+                                                .padding(.vertical, 5.5)
+                                                .foregroundColor(isSearchSelected ? Color(hex: 0x206EFF, alpha: 1) : Color(hex: 0x828282, alpha: 1))
+                                            Text("Search")
+                                                .font(.system(size: 15))
+                                                .fontWeight(Font.Weight.medium)
+                                                .foregroundColor(isSearchSelected ? Color(hex: 0x206EFF, alpha: 1) : Color(hex: 0x828282, alpha: 1))
+                                        }
+                                        .padding(.horizontal, 6)
+                                        .background(isSearchSelected ? Color(hex: "EBF2FF") : .white)
+                                        .cornerRadius(16)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(isSearchSelected ? Color(hex: "C0D6FF") : Color(hex: "E5E6EB"), lineWidth: 1)
+                                        )
+                                        .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
+                                    }
+                                    
+                                    
                                 }
                                 .padding(.leading)
                                 
                                 Spacer()
                                 
                                 // 右侧按钮组
-                                HStack(spacing: 16) {
+                                HStack(spacing: 4) {
                                     Button(action: {
                                         isRecording = true
                                     }) {
-                                        Image(systemName: "mic")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(.black)
+                                        Image("icon_audio")
+                                            .frame(width: 29, height: 29)
+                                            .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                     }
                                     
                                     Button(action: {
@@ -241,10 +247,9 @@ struct HomeView: View {
                                             isShowingRecordingPage = true
                                         }
                                     }) {
-                                        Image(systemName: inputMessage.isEmpty ? "waveform" : "arrow.up.circle.fill")
-                                            .font(.system(size: 24))
-                                            .frame(width: 24, height: 24)
-                                            .foregroundColor(.black)
+                                        Image("icon_wave")
+                                            .frame(width: 29, height: 29)
+                                            .shadow(color: Color(hex: 0x191D28, alpha: 0.06), radius: 5, x: 0, y: 6)
                                     }
                                 }
                                 .padding(.trailing)

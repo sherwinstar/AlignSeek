@@ -16,7 +16,7 @@ struct RecordingPageView: View {
     var body: some View {
         ZStack {
             // 背景
-            Color.white.ignoresSafeArea()
+            Color(hex: "F5F5F5").ignoresSafeArea()
             
             // 顶部工具栏
             VStack {
@@ -53,13 +53,20 @@ struct RecordingPageView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            gradient: Gradient(colors: [Color(#colorLiteral(red: 0.8039215686, green: 0.9176470588, blue: 1, alpha: 1)), Color(#colorLiteral(red: 0, green: 0.4784313725, blue: 1, alpha: 1))]),
+                            gradient: Gradient(colors: [Color(hex: 0x4C8BFF, alpha: 1.0), Color(hex: 0x0245C0, alpha: 1.0)]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
                     .frame(width: 200, height: 200)
-                    .rotationEffect(.degrees(rotationDegree))
+                    .scaleEffect(isProcessing ? 1.1 : 1.0)
+                    .animation(
+                        isProcessing ? 
+                            Animation.easeInOut(duration: 1.0)
+                                .repeatForever(autoreverses: true) 
+                            : .default,
+                        value: isProcessing
+                    )
                     .overlay(
                         Group {
                             if isProcessing {
@@ -79,11 +86,8 @@ struct RecordingPageView: View {
                 
                 // 底部按钮
                 HStack() {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(Color(UIColor.systemGray))
-                        .frame(width: 60, height: 60)
-                        .clipShape(Circle())
+                    Image("icon_microphone")
+                        .frame(width: 56, height: 56)
                         .gesture(
                             DragGesture(minimumDistance: 0)
                                 .onChanged { _ in
@@ -101,11 +105,8 @@ struct RecordingPageView: View {
                     Button(action: {
                         dismiss()
                     }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 24))
-                            .foregroundColor(Color(UIColor.systemGray))
-                            .frame(width: 60, height: 60)
-                            .clipShape(Circle())
+                        Image("icon_close_record")
+                            .frame(width: 56, height: 56)
                     }
                 }.padding(.horizontal, 24)
                 .padding(.bottom, 40)
@@ -170,15 +171,11 @@ struct RecordingPageView: View {
     }
     
     private func startProcessingAnimation() {
-        withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
-            rotationDegree = 360
-        }
+        isProcessing = true
     }
     
     private func stopProcessingAnimation() {
-        withAnimation {
-            rotationDegree = 0
-        }
+        isProcessing = false
     }
     
     private func stopProcessing() {
