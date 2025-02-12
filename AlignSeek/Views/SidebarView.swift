@@ -4,7 +4,6 @@ struct SidebarView: View {
     @Binding var isPresented: Bool
     @Binding var currentSession: ChatSession?
     var onSessionSelected: ((ChatSession) -> Void)?
-    @State private var searchText = ""
     @State private var showingLogoutAlert = false
     @AppStorage("userEmail") private var userEmail = ""
     @AppStorage("isLoggedIn") private var isLoggedIn = false
@@ -17,16 +16,12 @@ struct SidebarView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 搜索栏
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-                TextField("搜索", text: $searchText)
-            }
-            .padding(8)
-            .background(Color(UIColor.secondarySystemBackground))
-            .cornerRadius(8)
-            .padding()
+            // 顶部 Logo
+            Image("icon_hksense")
+                .resizable()
+                .frame(width: 121, height: 24)
+                .padding(.top, 16)
+                .padding(.bottom, 16)
             
             // 会话列表
             ScrollView {
@@ -35,7 +30,9 @@ struct SidebarView: View {
                         Button(action: {
                             currentSession = session
                             onSessionSelected?(session)
-                            isPresented = false
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                isPresented = false
+                            }
                         }) {
                             HStack {
                                 Text(session.title ?? "New Chat")
@@ -89,7 +86,9 @@ struct SidebarView: View {
     }
     
     private func logout() {
-        isLoggedIn = false
-        isPresented = false
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            isLoggedIn = false
+            isPresented = false
+        }
     }
 }

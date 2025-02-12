@@ -36,279 +36,298 @@ struct HomeView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                VStack(spacing: 0) {
-                    // 顶部按钮
-                    HStack {
-                        Button(action: { 
-                            showingSidebar.toggle()
-                            // 隐藏键盘
-                            isFocused = false
-                        }) {
-                            Image(systemName: "line.3.horizontal")
-                                .font(.title2)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: {}) {
-                            Text("HKSense")
-                                .font(.headline)
-                                .foregroundColor(.blue)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 8)
-                                .background(Color(UIColor.secondarySystemBackground))
-                                .cornerRadius(20)
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            createNewChat()
-                            // 隐藏键盘
-                            isFocused = false
-                        }) {
-                            Image(systemName: "square.and.pencil")
-                                .font(.title2)
-                                .foregroundColor(.primary)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // 聊天区域
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(messages) { message in
-                                MessageBubble(message: message)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                    }
-                    
-                    // 底部区域
+            GeometryReader { geometry in
+                ZStack {
+                    // 主内容
                     VStack(spacing: 0) {
-                        if isRecording {
-                            RecordingView(isRecording: $isRecording) { transcription in
-                                // 将转写的文字添加到输入框
-                                inputMessage = transcription
-                                print("222:" + transcription)
+                        // 顶部按钮
+                        HStack {
+                            Button(action: { 
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                                    showingSidebar.toggle()
+                                }
+                                // 隐藏键盘
+                                isFocused = false
+                            }) {
+                                Image(systemName: "line.3.horizontal")
+                                    .font(.title2)
+                                    .foregroundColor(.primary)
                             }
-                            .transition(.opacity)
-                        } else {
-                            // 输入框区域
-                            VStack(spacing: 0) {
-                                ZStack(alignment: .leading) {
-                                    VStack(spacing: 4) {
-                                        if !selectedAttachments.isEmpty {
-                                            ScrollView(.horizontal, showsIndicators: false) {
-                                                HStack(spacing: 8) {
-                                                    ForEach(selectedAttachments) { attachment in
-                                                        AttachmentPreviewView(item: attachment) {
-                                                            if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
-                                                                selectedAttachments.remove(at: index)
+                            
+                            Spacer()
+                            
+                            Button(action: {}) {
+                                Text("HKSense")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.secondarySystemBackground))
+                                    .cornerRadius(20)
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                createNewChat()
+                                // 隐藏键盘
+                                isFocused = false
+                            }) {
+                                Image(systemName: "square.and.pencil")
+                                    .font(.title2)
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        .padding(.horizontal)
+                        
+                        // 聊天区域
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(messages) { message in
+                                    MessageBubble(message: message)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                        }
+                        
+                        // 底部区域
+                        VStack(spacing: 0) {
+                            if isRecording {
+                                RecordingView(isRecording: $isRecording) { transcription in
+                                    // 将转写的文字添加到输入框
+                                    inputMessage = transcription
+                                    print("222:" + transcription)
+                                }
+                                .transition(.opacity)
+                            } else {
+                                // 输入框区域
+                                VStack(spacing: 0) {
+                                    ZStack(alignment: .leading) {
+                                        VStack(spacing: 4) {
+                                            if !selectedAttachments.isEmpty {
+                                                ScrollView(.horizontal, showsIndicators: false) {
+                                                    HStack(spacing: 8) {
+                                                        ForEach(selectedAttachments) { attachment in
+                                                            AttachmentPreviewView(item: attachment) {
+                                                                if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
+                                                                    selectedAttachments.remove(at: index)
+                                                                }
                                                             }
                                                         }
                                                     }
+                                                    .padding(.trailing, 12)  // 只保留右侧内边距
                                                 }
-                                                .padding(.trailing, 12)  // 只保留右侧内边距
+                                                .frame(height: 70)
                                             }
-                                            .frame(height: 70)
+                                            
+                                            AdaptiveTextViewWithPlaceholder(
+                                                text: $inputMessage,
+                                                height: $textViewHeight,
+                                                placeholder: "消息"
+                                            )
+                                            .frame(height: textViewHeight)
                                         }
-                                        
-                                        AdaptiveTextViewWithPlaceholder(
-                                            text: $inputMessage,
-                                            height: $textViewHeight,
-                                            placeholder: "消息"
-                                        )
-                                        .frame(height: textViewHeight)
                                     }
+                                    .padding(.horizontal, 12)
                                 }
-                                .padding(.horizontal, 12)
-                            }
-                            .padding(.top, 6)
-                            .background(Color.white)
-                            .clipShape(
-                                UnevenRoundedRectangle(
-                                    topLeadingRadius: 20,
-                                    bottomLeadingRadius: 0,
-                                    bottomTrailingRadius: 0,
-                                    topTrailingRadius: 20
+                                .padding(.top, 6)
+                                .background(Color.white)
+                                .clipShape(
+                                    UnevenRoundedRectangle(
+                                        topLeadingRadius: 20,
+                                        bottomLeadingRadius: 0,
+                                        bottomTrailingRadius: 0,
+                                        topTrailingRadius: 20
+                                    )
                                 )
-                            )
-                            .overlay(
-                                GeometryReader { geometry in
-                                    Path { path in
-                                        let w = geometry.size.width
-                                        let radius: CGFloat = 20
-                                        
-                                        path.move(to: CGPoint(x: 0, y: radius))
-                                        path.addArc(center: CGPoint(x: radius, y: radius),
-                                                   radius: radius,
-                                                   startAngle: .degrees(180),
-                                                   endAngle: .degrees(270),
-                                                   clockwise: false)
-                                        path.addLine(to: CGPoint(x: w - radius, y: 0))
-                                        path.addArc(center: CGPoint(x: w - radius, y: radius),
-                                                   radius: radius,
-                                                   startAngle: .degrees(270),
-                                                   endAngle: .degrees(0),
-                                                   clockwise: false)
-                                    }
-                                    .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
-                                }
-                            )
-                            .focused($isFocused)
-                            .transition(.opacity)
-                        }
-                        
-                        // 底部工具栏
-                        HStack {
-                            // 左侧按钮组
-                            HStack(spacing: 16) {
-                                Button(action: { 
-                                    showingPlusMenu.toggle()
-                                }) {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(isSearchSelected || isReasoningSelected ? .gray : .black)
-                                        .frame(width: 36, height: 36)
-                                        .background(Color(UIColor.systemGray6))
-                                        .clipShape(Circle())
-                                }
-                                .disabled(isSearchSelected || isReasoningSelected)
-                                .background(
+                                .overlay(
                                     GeometryReader { geometry in
-                                        Color.clear.onAppear {
-                                            plusButtonFrame = geometry.frame(in: .global)
+                                        Path { path in
+                                            let w = geometry.size.width
+                                            let radius: CGFloat = 20
+                                            
+                                            path.move(to: CGPoint(x: 0, y: radius))
+                                            path.addArc(center: CGPoint(x: radius, y: radius),
+                                                       radius: radius,
+                                                       startAngle: .degrees(180),
+                                                       endAngle: .degrees(270),
+                                                       clockwise: false)
+                                            path.addLine(to: CGPoint(x: w - radius, y: 0))
+                                            path.addArc(center: CGPoint(x: w - radius, y: radius),
+                                                       radius: radius,
+                                                       startAngle: .degrees(270),
+                                                       endAngle: .degrees(0),
+                                                       clockwise: false)
                                         }
+                                        .stroke(Color(UIColor.systemGray5), lineWidth: 0.5)
                                     }
                                 )
-                                
-                                Button(action: { isSearchSelected.toggle() }) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "globe")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(isSearchSelected ? .blue : .black)
-                                        Text("搜索")
-                                            .font(.system(size: 17))
-                                            .foregroundColor(isSearchSelected ? .blue : .black)
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(isSearchSelected ? Color.blue.opacity(0.1) : .clear)
-                                    .clipShape(Capsule())
-                                }
-                                
-                                Button(action: { isReasoningSelected.toggle() }) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "lightbulb")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(isReasoningSelected ? .blue : .black)
-                                        Text("推理")
-                                            .font(.system(size: 17))
-                                            .foregroundColor(isReasoningSelected ? .blue : .black)
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(isReasoningSelected ? Color.blue.opacity(0.1) : .clear)
-                                    .clipShape(Capsule())
-                                }
+                                .focused($isFocused)
+                                .transition(.opacity)
                             }
-                            .padding(.leading)
                             
-                            Spacer()
-                            
-                            // 右侧按钮组
-                            HStack(spacing: 16) {
-                                Button(action: {
-                                    isRecording = true
-                                }) {
-                                    Image(systemName: "mic")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.black)
-                                }
-                                
-                                Button(action: {
-                                    if !inputMessage.isEmpty {
-                                        sendMessage()
-                                    } else {
-                                        isShowingRecordingPage = true
+                            // 底部工具栏
+                            HStack {
+                                // 左侧按钮组
+                                HStack(spacing: 16) {
+                                    Button(action: { 
+                                        showingPlusMenu.toggle()
+                                    }) {
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(isSearchSelected || isReasoningSelected ? .gray : .black)
+                                            .frame(width: 36, height: 36)
+                                            .background(Color(UIColor.systemGray6))
+                                            .clipShape(Circle())
                                     }
-                                }) {
-                                    Image(systemName: inputMessage.isEmpty ? "waveform" : "arrow.up.circle.fill")
-                                        .font(.system(size: 24))
-                                        .frame(width: 24, height: 24)
-                                        .foregroundColor(.black)
+                                    .disabled(isSearchSelected || isReasoningSelected)
+                                    .background(
+                                        GeometryReader { geometry in
+                                            Color.clear.onAppear {
+                                                plusButtonFrame = geometry.frame(in: .global)
+                                            }
+                                        }
+                                    )
+                                    
+                                    Button(action: { isSearchSelected.toggle() }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "globe")
+                                                .font(.system(size: 24))
+                                                .foregroundColor(isSearchSelected ? .blue : .black)
+                                            Text("搜索")
+                                                .font(.system(size: 17))
+                                                .foregroundColor(isSearchSelected ? .blue : .black)
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(isSearchSelected ? Color.blue.opacity(0.1) : .clear)
+                                        .clipShape(Capsule())
+                                    }
+                                    
+                                    Button(action: { isReasoningSelected.toggle() }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "lightbulb")
+                                                .font(.system(size: 24))
+                                                .foregroundColor(isReasoningSelected ? .blue : .black)
+                                            Text("推理")
+                                                .font(.system(size: 17))
+                                                .foregroundColor(isReasoningSelected ? .blue : .black)
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(isReasoningSelected ? Color.blue.opacity(0.1) : .clear)
+                                        .clipShape(Capsule())
+                                    }
                                 }
+                                .padding(.leading)
+                                
+                                Spacer()
+                                
+                                // 右侧按钮组
+                                HStack(spacing: 16) {
+                                    Button(action: {
+                                        isRecording = true
+                                    }) {
+                                        Image(systemName: "mic")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(.black)
+                                    }
+                                    
+                                    Button(action: {
+                                        if !inputMessage.isEmpty {
+                                            sendMessage()
+                                        } else {
+                                            isShowingRecordingPage = true
+                                        }
+                                    }) {
+                                        Image(systemName: inputMessage.isEmpty ? "waveform" : "arrow.up.circle.fill")
+                                            .font(.system(size: 24))
+                                            .frame(width: 24, height: 24)
+                                            .foregroundColor(.black)
+                                    }
+                                }
+                                .padding(.trailing)
                             }
-                            .padding(.trailing)
+                            .padding(.vertical, 8)
+                            .background(.white)
                         }
-                        .padding(.vertical, 8)
                         .background(.white)
                     }
-                    .background(.white)
-                }
-                
-                // 侧边栏和遮罩
-                if showingSidebar {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            showingSidebar = false
-                        }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
-                    HStack {
-                        SidebarView(
-                            isPresented: $showingSidebar,
-                            currentSession: $currentSession,
-                            onSessionSelected: { session in
-                                currentSession = session
-                                messages = CoreDataManager.shared.fetchChatMessages(for: session.id!)
+                    // 遮罩和侧边栏
+                    if showingSidebar {
+                        ZStack {
+                            // 遮罩
+                            Color.black.opacity(0.3)
+                                .ignoresSafeArea()
+                                .onTapGesture {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                                        showingSidebar = false
+                                    }
+                                }
+                                .transition(.opacity)
+                            
+                            // 侧边栏
+                            HStack(spacing: 0) {
+                                SidebarView(
+                                    isPresented: $showingSidebar,
+                                    currentSession: $currentSession,
+                                    onSessionSelected: { session in
+                                        currentSession = session
+                                        messages = CoreDataManager.shared.fetchChatMessages(for: session.id!)
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                                            showingSidebar = false
+                                        }
+                                    }
+                                )
+                                
+                                Spacer()
                             }
-                        )
-                        Spacer()
-                    }
-                    .transition(.move(edge: .leading))
-                }
-                
-                // 弹出菜单
-                if showingPlusMenu {
-                    Color.black.opacity(0.1)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            showingPlusMenu = false
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
                         }
+                        .zIndex(1)  // 确保遮罩和侧边栏在最上层
+                    }
                     
-                    VStack {
-                        Spacer()
-                        HStack {
-                            PlusMenuView(isPresented: $showingPlusMenu,
-                                        onImageSelected: { image in
-                                selectedAttachments.append(AttachmentItem(type: .image(image)))
-                            }, onFileSelected: { url in
-                                selectedAttachments.append(AttachmentItem(type: .file(url)))
-                            })
-                                .padding(.horizontal)
-                                .padding(.bottom, 60)
-                                .scaleEffect(showingPlusMenu ? 1 : 0.1)
-                                .offset(x: showingPlusMenu ? 0 : (plusButtonFrame.minX - UIScreen.main.bounds.width * 0.2),
-                                       y: showingPlusMenu ? 0 : (plusButtonFrame.minY - UIScreen.main.bounds.height + 60))
+                    // 弹出菜单
+                    if showingPlusMenu {
+                        Color.black.opacity(0.1)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                showingPlusMenu = false
+                            }
+                        
+                        VStack {
                             Spacer()
+                            HStack {
+                                PlusMenuView(isPresented: $showingPlusMenu,
+                                            onImageSelected: { image in
+                                    selectedAttachments.append(AttachmentItem(type: .image(image)))
+                                }, onFileSelected: { url in
+                                    selectedAttachments.append(AttachmentItem(type: .file(url)))
+                                })
+                                    .padding(.horizontal)
+                                    .padding(.bottom, 60)
+                                    .scaleEffect(showingPlusMenu ? 1 : 0.1)
+                                    .offset(x: showingPlusMenu ? 0 : (plusButtonFrame.minX - UIScreen.main.bounds.width * 0.2),
+                                           y: showingPlusMenu ? 0 : (plusButtonFrame.minY - UIScreen.main.bounds.height + 60))
+                                Spacer()
+                            }
                         }
                     }
-                }
-                
-                // 录音页面导航链接
-                NavigationLink(isActive: $isShowingRecordingPage) {
-                    RecordingPageView()
-                } label: {
-                    EmptyView()
+                    
+                    // 录音页面导航链接
+                    NavigationLink(isActive: $isShowingRecordingPage) {
+                        RecordingPageView()
+                    } label: {
+                        EmptyView()
+                    }
                 }
             }
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showingSidebar)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showingPlusMenu)
             .navigationBarHidden(true)
             .onAppear {
                 loadLatestSession()
