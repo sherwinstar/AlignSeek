@@ -25,6 +25,10 @@ struct HomeView: View {
     // 添加一个属性来跟踪新消息的 ID
     @State private var newMessageId: Int64?
     
+    // 添加等待响应状态
+    @State private var isWaitingResponse = false
+    @State private var currentTask: Task<Void, Never>?  // 用于取消任务
+    
     // 定义附件类型
     enum AttachmentType {
         case image(UIImage)
@@ -121,58 +125,55 @@ struct HomeView: View {
                                 .transition(.opacity)
                             } else {
                                 // 输入框区域
-                                VStack(spacing: 0) {
-                                    VStack(spacing: 4) {
-                                        if !selectedAttachments.isEmpty {
-                                            ScrollView(.horizontal, showsIndicators: false) {
-                                                HStack(spacing: 8) {
-                                                    ForEach(selectedAttachments) { attachment in
-                                                        AttachmentPreviewView(item: attachment) {
-                                                            if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
-                                                                selectedAttachments.remove(at: index)
-                                                            }
+                                VStack(spacing: 4) {
+                                    if !selectedAttachments.isEmpty {
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            HStack(spacing: 8) {
+                                                ForEach(selectedAttachments) { attachment in
+                                                    AttachmentPreviewView(item: attachment) {
+                                                        if let index = selectedAttachments.firstIndex(where: { $0.id == attachment.id }) {
+                                                            selectedAttachments.remove(at: index)
                                                         }
                                                     }
                                                 }
                                                 .padding(.trailing, 12)
                                             }
-                                            .frame(height: 70)
+                                            .padding(.trailing, 12)
                                         }
-                                        
-                                        HStack(spacing: 6) {  // 添加水平布局，spacing为12dp
-                                            AdaptiveTextViewWithPlaceholder(
-                                                text: $inputMessage,
-                                                height: $textViewHeight,
-                                                placeholder: "To send a message to HKChat"
-                                            )
-                                            .frame(height: textViewHeight)
-                                            
-                                            // 发送按钮
-                                            Button(action: {
-                                                if !inputMessage.isEmpty {
-                                                    sendMessage()
-                                                }
-                                            }) {
-                                                Image(inputMessage.isEmpty ? "icon_send": "icon_send_enable")
-                                                    .frame(width: 24, height: 24)
-                                                
-//                                                Image("icon_send")
-//                                                    .renderingMode(.template)
-//                                                    .frame(width: 24, height: 24)
-//                                                    .foregroundColor(inputMessage.isEmpty ? 
-//                                                        Color(hex: 0x1B2559).opacity(0.2) :  // 空时是 #1B2559 20%透明度
-//                                                        Color(hex: 0x1D2129)                 // 非空时是 #191D28 不透明
-//                                                    )
-                                            }
-                                            .frame(width: 24, height: 24)
-                                            .padding(.trailing, 12)  // 右边距12dp
-                                        }
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            isFocused = true
-                                        }
+                                        .frame(height: 70)
                                     }
                                     
+                                    HStack(spacing: 6) {
+                                        AdaptiveTextViewWithPlaceholder(
+                                            text: $inputMessage,
+                                            height: $textViewHeight,
+                                            placeholder: "To send a message to HKChat"
+                                        )
+                                        .frame(height: textViewHeight)
+                                        .disabled(isWaitingResponse)  // 等待响应时禁用输入
+                                        
+                                        // 发送/停止按钮
+                                        Button(action: {
+                                            if isWaitingResponse {
+                                                // 如果正在等待响应，取消请求
+                                                currentTask?.cancel()
+                                                isWaitingResponse = false
+                                            } else if !inputMessage.isEmpty {
+                                                // 如果有输入内容，发送消息
+                                                sendMessage()
+                                            }
+                                        }) {
+                                            Image(isWaitingResponse ? "icon_stop" : 
+                                                  (inputMessage.isEmpty ? "icon_send" : "icon_send_enable"))
+                                                .frame(width: 24, height: 24)
+                                        }
+                                        .frame(width: 24, height: 24)
+                                        .padding(.trailing, 12)
+                                    }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        isFocused = true
+                                    }
                                 }
                                 .background(Color.white)
                                 .cornerRadius(16)
@@ -413,42 +414,62 @@ struct HomeView: View {
         selectedAttachments = []
         isFocused = false
         
+        isWaitingResponse = true  // 开始等待响应
+        
         // 调用 API 获取 AI 响应
         if mediaUrls.isEmpty {
-            APIService2.shared.sendMessage(trimmedMessage) { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success(let response):
-                        let aiMessage = CoreDataManager.shared.createChatMessage(
-                            content: response,
-                            isUser: false,
-                            session: session
-                        )
-                        messages.append(aiMessage)
-                        newMessageId = aiMessage.id  // 标记新消息
-                        
-                    case .failure(let error):
-                        print("API Error: \(error.localizedDescription)")
-                        // TODO: 显示错误提示
+            // 创建一个 Task 来包装回调
+            currentTask = Task {
+                await withCheckedContinuation { continuation in
+                    APIService2.shared.sendMessage(trimmedMessage) { result in
+                        if !Task.isCancelled {
+                            DispatchQueue.main.async {
+                                switch result {
+                                case .success(let response):
+                                    let aiMessage = CoreDataManager.shared.createChatMessage(
+                                        content: response,
+                                        isUser: false,
+                                        session: session
+                                    )
+                                    messages.append(aiMessage)
+                                    newMessageId = aiMessage.id
+                                    isWaitingResponse = false  // 响应完成
+                                    
+                                case .failure(let error):
+                                    print("API Error: \(error.localizedDescription)")
+                                    isWaitingResponse = false  // 发生错误时也要重置状态
+                                }
+                            }
+                        }
+                        continuation.resume()
                     }
                 }
             }
         } else {
-            APIService.shared.sendMessage(trimmedMessage, message: message) { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success(let response):
-                        let aiMessage = CoreDataManager.shared.createChatMessage(
-                            content: response,
-                            isUser: false,
-                            session: session
-                        )
-                        messages.append(aiMessage)
-                        newMessageId = aiMessage.id  // 标记新消息
-                        
-                    case .failure(let error):
-                        print("API Error: \(error.localizedDescription)")
-                        // TODO: 显示错误提示
+            // 创建一个 Task 来包装回调
+            currentTask = Task {
+                await withCheckedContinuation { continuation in
+                    APIService.shared.sendMessage(trimmedMessage, message: message) { result in
+                        if !Task.isCancelled {
+                            DispatchQueue.main.async {
+                                switch result {
+                                case .success(let response):
+                                    let aiMessage = CoreDataManager.shared.createChatMessage(
+                                        content: response,
+                                        isUser: false,
+                                        session: session
+                                    )
+                                    messages.append(aiMessage)
+                                    newMessageId = aiMessage.id
+                                    isWaitingResponse = false  // 响应完成
+                                    
+                                case .failure(let error):
+                                    print("API Error: \(error.localizedDescription)")
+                                    isWaitingResponse = false  // 发生错误时也要重置状态
+                                }
+                            }
+                        }
+                        continuation.resume()
                     }
                 }
             }
