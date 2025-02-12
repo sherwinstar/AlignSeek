@@ -444,9 +444,12 @@ struct HomeView: View {
         selectedAttachments = []
         isFocused = false  // 隐藏键盘
         
-        // 滚动到底部
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            scrollToBottom()
+        // 等待键盘消失后再滚动到底部
+        // 键盘动画大约需要 0.25 秒
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                scrollProxy?.scrollTo(bottomID, anchor: .bottom)
+            }
         }
         
         isWaitingResponse = true
@@ -468,9 +471,9 @@ struct HomeView: View {
                                     newMessageId = aiMessage.id
                                     isWaitingResponse = false
                                     
-                                    // 滚动到底部
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                        scrollToBottom()
+                                    // 收到 AI 响应后立即滚动到底部
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        scrollProxy?.scrollTo(bottomID, anchor: .bottom)
                                     }
                                     
                                 case .failure(let error):
