@@ -61,24 +61,30 @@ struct SidebarView: View {
                 showingLogoutAlert = true
             }) {
                 HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("退出登录")
-                        .foregroundColor(.red)
+                    Text("Sign Out")
+                        .foregroundColor(Color(hex: "4E5969"))
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color(UIColor.secondarySystemBackground))
+                .background(Color(hex: "D6E1EF"))
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(hex: "4E5969"), lineWidth: 1)
+                )
+                .padding(.horizontal, 22)
+                .padding(.bottom)
             }
         }
         .frame(width: UIScreen.main.bounds.width * 0.75)
         .background(Color(UIColor.systemBackground))
-        .alert("确认退出登录", isPresented: $showingLogoutAlert) {
-            Button("取消", role: .cancel) { }
-            Button("退出登录", role: .destructive) {
+        .alert("Logout ?", isPresented: $showingLogoutAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Logout", role: .destructive) {
                 logout()
             }
         } message: {
-            Text("确定要退出登录吗？")
+            Text("Are you sure you want to log out?\n You'll need to log in again to access your account.")
         }
     }
     
@@ -86,4 +92,4 @@ struct SidebarView: View {
         isLoggedIn = false
         isPresented = false
     }
-} 
+}
