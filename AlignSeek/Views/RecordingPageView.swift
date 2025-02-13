@@ -238,7 +238,8 @@ class RecordingViewModel: NSObject, ObservableObject {
                     self.aiResponse = response
                     self.speakAIResponse(response)
                 case .failure(let error):
-                    self.statusText = "发生错误: \(error.localizedDescription)"
+                    self.statusText = "AI is listening..."
+                    self.isProcessing = false
                     // 恢复录音
                     try? self.audioEngine.start()
                 }
